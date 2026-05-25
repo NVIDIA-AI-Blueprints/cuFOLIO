@@ -71,13 +71,13 @@ jobs:
               cd notebooks
 
               echo "===================== Run cvar_basic notebook ====================="
-              papermill cvar_basic.ipynb cvar_basic_result.ipynb --kernel portfolio-opt --log-output --log-level DEBUG
+              papermill cvar_basic.ipynb cvar_basic_result.ipynb --kernel portfolio-opt --log-output
 
               echo "===================== Run efficient_frontier notebook ====================="
-              papermill efficient_frontier.ipynb efficient_frontier_result.ipynb --kernel portfolio-opt  --log-output --log-level DEBUG
+              papermill efficient_frontier.ipynb efficient_frontier_result.ipynb --kernel portfolio-opt --log-output
 
               echo "===================== Run rebalancing_strategies notebook ====================="
-              papermill rebalancing_strategies.ipynb rebalancing_strategies_result.ipynb --kernel portfolio-opt  --log-output --log-level DEBUG
+              papermill rebalancing_strategies.ipynb rebalancing_strategies_result.ipynb --kernel portfolio-opt --log-output
 
               echo "===================== Convert notebooks to HTML ====================="
               jupyter nbconvert --to html cvar_basic_result.ipynb
