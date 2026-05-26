@@ -1059,7 +1059,9 @@ def _download_tickers(
     frames = []
     for i in range(0, len(tickers), batch_size):
         batch = tickers[i : i + batch_size]
-        batch_data = yf.download(batch, start=start_date, end=end_date, timeout=30)
+        batch_data = yf.download(
+            batch, start=start_date, end=end_date, timeout=30, progress=False
+        )
         frames.append(batch_data["Close"])
 
     data = pd.concat(frames, axis=1)

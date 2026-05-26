@@ -63,7 +63,7 @@ jobs:
           echo "===================== System Info ====================="
           more /etc/os-release
           uname -a
-          docker version 
+          docker version
 
       - name: Run container and execute notebooks
         run: |
@@ -71,8 +71,8 @@ jobs:
             -v "$(pwd):/workspace" \
             -w /workspace \
             nvcr.io/nvidia/pytorch:25.08-py3 \
-            bash -c '
-              set -e
+            bash -lc '
+              set -euo pipefail
               echo "===================== Python and GPU Info ====================="
               python --version
               nvidia-smi
@@ -80,12 +80,11 @@ jobs:
               echo "===================== Install uv ====================="
               curl -LsSf https://astral.sh/uv/install.sh | sh
               export PATH="/root/.cargo/bin:$PATH"
-              source $HOME/.local/bin/env
+              source "$HOME/.local/bin/env"
 
               echo "===================== Install Dependencies with uv ====================="
-              uv sync --extra cuda13
               uv sync --extra cuda13 --extra dev
-              
+
 
               echo "===================== Install Jupyter and other packages ====================="
               pip install jupyter jupyterlab ipykernel papermill nbconvert
@@ -99,35 +98,84 @@ jobs:
               echo "===================== Change to notebooks directory ====================="
               cd notebooks
 
-              echo "===================== Run cvar_basic notebook ====================="
-              papermill cvar_basic.ipynb cvar_basic_result.ipynb --kernel portfolio-opt --log-output --log-level DEBUG
+              overall_status=0
+              : > notebook_status.txt
 
-              echo "===================== Run efficient_frontier notebook ====================="
-              papermill efficient_frontier.ipynb efficient_frontier_result.ipynb --kernel portfolio-opt  --log-output --log-level DEBUG
+              run_notebook() {
+                local input="$1"
+                local output="$2"
+                local name="${input%.ipynb}"
 
-              echo "===================== Run rebalancing_strategies notebook ====================="
-              papermill rebalancing_strategies.ipynb rebalancing_strategies_result.ipynb --kernel portfolio-opt  --log-output --log-level DEBUG
+                echo "===================== Run ${input} notebook ====================="
+                set +e
+                papermill "$input" "$output" --kernel portfolio-opt --log-output --log-level DEBUG 2>&1 \
+                  | sed -E "s/\x27image\/png\x27: \x27[^\x27]*\x27/\x27image\/png\x27: \x27<elided>\x27/g" \
+                  | tee "${name}.papermill.log"
+                local status="${PIPESTATUS[0]}"
+                set -e
 
-              echo "===================== Run launchable notebook ====================="
-              papermill launchable.ipynb launchable_brev_result.ipynb --kernel portfolio-opt  --log-output --log-level DEBUG
+                if [ "$status" -eq 0 ]; then
+                  echo "${input},PASS" | tee -a notebook_status.txt
+                else
+                  echo "${input},FAIL(${status})" | tee -a notebook_status.txt
+                  overall_status=1
+                fi
+              }
 
+              convert_notebook() {
+                local input="$1"
+                local name="${input%.ipynb}"
+
+                if [ ! -s "$input" ]; then
+                  echo "nbconvert:${input},SKIP(no output notebook)" | tee -a notebook_status.txt
+                  overall_status=1
+                  return
+                fi
+
+                echo "===================== Convert ${input} to HTML ====================="
+                set +e
+                jupyter nbconvert --to html "$input" 2>&1 | tee "${name}.nbconvert.log"
+                local status="${PIPESTATUS[0]}"
+                set -e
+
+                if [ "$status" -eq 0 ]; then
+                  echo "nbconvert:${input},PASS" | tee -a notebook_status.txt
+                else
+                  echo "nbconvert:${input},FAIL(${status})" | tee -a notebook_status.txt
+                  overall_status=1
+                fi
+              }
+
+              run_notebook cvar_basic.ipynb cvar_basic_result.ipynb
+              run_notebook efficient_frontier.ipynb efficient_frontier_result.ipynb
+              run_notebook rebalancing_strategies.ipynb rebalancing_strategies_result.ipynb
+              run_notebook launchable.ipynb launchable_brev_result.ipynb
 
               echo "===================== Convert notebooks to HTML ====================="
-              jupyter nbconvert --to html cvar_basic_result.ipynb
-              jupyter nbconvert --to html efficient_frontier_result.ipynb
-              jupyter nbconvert --to html rebalancing_strategies_result.ipynb
-              jupyter nbconvert --to html launchable_brev_result.ipynb
+              convert_notebook cvar_basic_result.ipynb
+              convert_notebook efficient_frontier_result.ipynb
+              convert_notebook rebalancing_strategies_result.ipynb
+              convert_notebook launchable_brev_result.ipynb
+
+              echo "===================== Notebook status summary ====================="
+              cat notebook_status.txt
+              exit "$overall_status"
             '
 
       - name: Verify results
-        if: always()
+        if: success()
         env:
-          TEST_DOCKER_PULL_KEY: ${{ secrets.TEST_DOCKER_PULL_KEY }}        
+          TEST_DOCKER_PULL_KEY: ${{ secrets.TEST_DOCKER_PULL_KEY }}
         run: |
+          set -euo pipefail
           echo "Checking for generated files...."
-          ls -lh notebooks/*result*
+          test -s notebooks/cvar_basic_result.html
+          test -s notebooks/efficient_frontier_result.html
+          test -s notebooks/rebalancing_strategies_result.html
+          test -s notebooks/launchable_brev_result.html
+          ls -lh notebooks/*result* notebooks/*.papermill.log notebooks/*.nbconvert.log notebooks/notebook_status.txt
           cd notebooks
-          echo "$TEST_DOCKER_PULL_KEY" |docker login nvcr.io --username  '$oauthtoken' --password-stdin 
+          echo "$TEST_DOCKER_PULL_KEY" |docker login nvcr.io --username  '$oauthtoken' --password-stdin
           docker run --rm \
             -v ./cvar_basic_result.html:/app/input/quantitative_portfolio_optimization/cvar_basic.html  \
             -v ./efficient_frontier_result.html:/app/input/quantitative_portfolio_optimization/efficient_frontier.html  \
@@ -136,7 +184,7 @@ jobs:
             -v "$(pwd):/workspace" \
             nvcr.io/rw983xdqtcdp/auto_test_team/blueprint-github-test-image:latest \
             pytest -m quantitative_portfolio_optimization --disable-warnings --html=/workspace/quantitative_portfolio_optimization.html --self-contained-html
-          
+
 
       - name: Upload notebook results as artifacts
         if: always()
@@ -145,18 +193,25 @@ jobs:
           name: notebook-results
           path: |
              notebooks/cvar_basic_result.html
+             notebooks/cvar_basic_result.ipynb
              notebooks/efficient_frontier_result.html
+             notebooks/efficient_frontier_result.ipynb
              notebooks/rebalancing_strategies_result.html
+             notebooks/rebalancing_strategies_result.ipynb
              notebooks/launchable_brev_result.html
+             notebooks/launchable_brev_result.ipynb
              notebooks/quantitative_portfolio_optimization.html
+             notebooks/*.papermill.log
+             notebooks/*.nbconvert.log
+             notebooks/notebook_status.txt
           retention-days: 30
 
       - name: Set result output
         id: set_result
-        if: always()  
+        if: always()
         run: |
           echo "RESULT=$(if [ ${{ job.status }} == 'success' ]; then echo 'PASS'; else echo 'FAIL'; fi)" >> $GITHUB_OUTPUT
-   
+
       - name: Send mail
         uses: dawidd6/action-send-mail@6e71c855c9a091d80a519621b9fd3e8d252ca40c
         if: always()
@@ -165,18 +220,17 @@ jobs:
           server_port: 587
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-          
-          # Email details
+
           subject: "QA Test Workflow Result for ${{ github.repository }}"
           to: Github-Action-Blueprint-QA@nvidia.com
           from: github-workflow-notification@gmail.com
           html_body: |
             <p>Hello,</p>
-            
+
             <p>The workflow for repository: <strong>${{ github.repository }}</strong> has completed.<br>
             <strong>Result:</strong> ${{ steps.set_result.outputs.RESULT }}</p>
-            
+
             <p>You can review the details on GitHub:<br>
             <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}</a></p>
-            
-            <p>Thanks!</p>      
+
+            <p>Thanks!</p>
