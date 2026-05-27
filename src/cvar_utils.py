@@ -705,14 +705,10 @@ def _annualized_sharpe_ratio(portfolio_return: float, volatility: float) -> floa
 
 
 def _select_efficient_frontier_key_portfolios(results_df: pd.DataFrame) -> dict:
-    risky_portfolios = results_df[
-        results_df["variance"].gt(FRONTIER_RISK_TOLERANCE)
-    ]
+    risky_portfolios = results_df[results_df["variance"].gt(FRONTIER_RISK_TOLERANCE)]
     min_var_candidates = risky_portfolios if not risky_portfolios.empty else results_df
 
-    finite_sharpe = (
-        results_df["sharpe"].replace([np.inf, -np.inf], np.nan).dropna()
-    )
+    finite_sharpe = results_df["sharpe"].replace([np.inf, -np.inf], np.nan).dropna()
 
     key_portfolios = {"Min Variance": min_var_candidates["variance"].idxmin()}
     if not finite_sharpe.empty:
