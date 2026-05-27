@@ -32,6 +32,8 @@ from .settings import (
     ScenarioGenerationSettings,
 )
 
+FRONTIER_RISK_TOLERANCE = 1e-12
+
 # Note: cvar_optimizer and cuml are imported lazily within functions to avoid
 # circular imports and loading CUDA libraries at module import time
 
@@ -691,6 +693,35 @@ def evaluate_user_input_portfolios(
     return custom_portfolios
 
 
+def _annualized_sharpe_ratio(portfolio_return: float, volatility: float) -> float:
+    if (
+        not np.isfinite(portfolio_return)
+        or not np.isfinite(volatility)
+        or volatility <= FRONTIER_RISK_TOLERANCE
+    ):
+        return np.nan
+
+    return portfolio_return / volatility * np.sqrt(252)
+
+
+def _select_efficient_frontier_key_portfolios(results_df: pd.DataFrame) -> dict:
+    risky_portfolios = results_df[
+        results_df["variance"].gt(FRONTIER_RISK_TOLERANCE)
+    ]
+    min_var_candidates = risky_portfolios if not risky_portfolios.empty else results_df
+
+    finite_sharpe = (
+        results_df["sharpe"].replace([np.inf, -np.inf], np.nan).dropna()
+    )
+
+    key_portfolios = {"Min Variance": min_var_candidates["variance"].idxmin()}
+    if not finite_sharpe.empty:
+        key_portfolios["Max Sharpe"] = finite_sharpe.idxmax()
+    key_portfolios["Max Return"] = results_df["return"].idxmax()
+
+    return key_portfolios
+
+
 def create_efficient_frontier(
     returns_dict: dict,
     cvar_params: CvarParameters,
@@ -835,8 +866,8 @@ def create_efficient_frontier(
             cvar_problem.covariance
         )
         result_row["volatility"] = np.sqrt(result_row["variance"])
-        result_row["sharpe"] = (
-            result_row["return"] / result_row["volatility"] * np.sqrt(252)
+        result_row["sharpe"] = _annualized_sharpe_ratio(
+            result_row["return"], result_row["volatility"]
         )
 
         results_data.append(result_row)
@@ -849,15 +880,7 @@ def create_efficient_frontier(
     results_df = pd.DataFrame(results_data)
 
     # Identify key portfolios
-    min_var_idx = results_df["variance"].idxmin()
-    max_sharpe_idx = results_df["sharpe"].idxmax()
-    max_return_idx = results_df["return"].idxmax()
-
-    key_portfolios = {
-        "Min Variance": min_var_idx,
-        "Max Sharpe": max_sharpe_idx,
-        "Max Return": max_return_idx,
-    }
+    key_portfolios = _select_efficient_frontier_key_portfolios(results_df)
 
     # Create the plot
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=colors["background"])

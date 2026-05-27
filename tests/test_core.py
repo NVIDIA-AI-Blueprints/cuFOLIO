@@ -8,6 +8,8 @@ from cufolio.cvar_data import CvarData
 from cufolio.cvar_optimizer import CVaR
 from cufolio.cvar_parameters import CvarParameters
 from cufolio.cvar_utils import (
+    _annualized_sharpe_ratio,
+    _select_efficient_frontier_key_portfolios,
     compute_CVaR,
     create_efficient_frontier,
     generate_cvar_data,
@@ -363,6 +365,24 @@ class TestCVaROptimization:
 
 
 class TestEfficientFrontier:
+    def test_zero_volatility_sharpe_is_nan(self):
+        assert np.isnan(_annualized_sharpe_ratio(0.0, 0.0))
+
+    def test_key_portfolios_skip_origin_when_risky_portfolios_exist(self):
+        results_df = pd.DataFrame(
+            {
+                "variance": [0.0, 0.01, 0.04],
+                "return": [0.0, 0.06, 0.08],
+                "sharpe": [np.nan, 0.95, 0.75],
+            },
+            index=["origin", "low_risk", "high_risk"],
+        )
+
+        key_portfolios = _select_efficient_frontier_key_portfolios(results_df)
+
+        assert key_portfolios["Min Variance"] == "low_risk"
+        assert key_portfolios["Max Sharpe"] == "low_risk"
+
     def test_frontier_monotonicity(self, returns_dict, cvar_data, cvar_params):
         returns_dict["cvar_data"] = cvar_data
         solver_settings = {"solver": cp.CLARABEL, "verbose": False}
