@@ -50,3 +50,7 @@ Thumbs.db
 # Data files
 data/stock_data/*.csv
 
+# NV-BASE validation artifacts
+nv-base-output-*.html
+/BENCHMARK.md
+

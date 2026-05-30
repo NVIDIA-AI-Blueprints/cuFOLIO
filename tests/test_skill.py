@@ -69,6 +69,16 @@ def test_has_description(frontmatter):
     )
 
 
+def test_has_license(frontmatter):
+    # NV-BASE Tier 1 requires a non-empty 'license' field in the frontmatter.
+    licenses = [
+        ln.split(":", 1)[1].strip() for ln in frontmatter if ln.startswith("license:")
+    ]
+    assert licenses and licenses[0], (
+        "frontmatter must include a non-empty 'license' (NV-BASE Tier 1 requirement)"
+    )
+
+
 def test_no_forbidden_frontmatter_keys(frontmatter):
     for ln in frontmatter:
         key = ln.split(":", 1)[0].strip()
