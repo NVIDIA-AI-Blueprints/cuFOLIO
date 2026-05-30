@@ -11,6 +11,26 @@ one-time PR to that repo; afterwards a daily sync pulls `skills/` from this repo
 NV-CARPS pre-catalog gate (scan + validate + sign + skill-card), and mirrors the signed
 skill into the catalog.
 
+## 0. Which path applies (read first)
+
+NVCARPS has two distribution tracks — don't mix their steps:
+
+- **External public catalog (our primary path).** For GitHub-canonical repos under an
+  NVIDIA org (we are `NVIDIA-AI-Blueprints/*`). Register via the `components.d` PR below and
+  trigger NV-CARPS with `/nvskills-ci`; the daily sync publishes to **github.com/NVIDIA/skills**
+  (build.nvidia.com). Confluence runbook: *GitHub-First — Outbound Repos Onboarding*
+  (`nvidia.atlassian.net/wiki/spaces/GAIT/pages/3483240468`).
+- **Internal NVCARPS ingestion (GitLab).** For repos canonical on gitlab-master.nvidia.com:
+  grant `NVCARPS_CI` to the repo at **aitoolsonboarding.nvidia.com** (adds the
+  `nvcarps-webhook-bot` + webhook), enable the *Pipelines must succeed* merge check, then open
+  an MR — ingests to **registry.nvidia.com / NICC / nvcarps-mcp** (~15 min). We do **not** do
+  this directly; internal NICC visibility comes as a side effect of the external path. Only
+  relevant if you take the interim *GitHub→GitLab bridge* (the "One-time migration setup for
+  GitHub-first repo" section of the GitLab onboarding page).
+
+Either way the skill lives at `skills/cufolio/` at the repo root, and ingestion attaches a
+per-skill signature only when the pipeline passes.
+
 ## 1. Registration entry
 
 Create `components.d/cufolio.yml` on a branch of **your fork of NVIDIA/skills**, then open
