@@ -1,0 +1,18 @@
+{
+  "name": "nvidia-cufolio-skills",
+  "owner": {
+    "name": "NVIDIA"
+  },
+  "metadata": {
+    "description": "Agent skill for NVIDIA-accelerated Mean-CVaR portfolio optimization with cuOpt.",
+    "version": "25.10.00"
+  },
+  "plugins": [
+    {
+      "name": "cufolio",
+      "source": "./skills/cufolio",
+      "skills": "./",
+      "description": "GPU-accelerated Mean-CVaR portfolio optimization with NVIDIA cuOpt — CVaR optimization, efficient frontier, scenario generation, backtesting, and rebalancing."
+    }
+  ]
+}

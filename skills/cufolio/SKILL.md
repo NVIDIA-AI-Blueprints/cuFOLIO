@@ -1,14 +1,10 @@
 ---
 name: cufolio
+version: "25.10.00"
+description: Build GPU-accelerated Mean-CVaR portfolios with NVIDIA cuOpt — CVaR optimization, efficient frontier, scenario generation, backtesting, and rebalancing.
 license: Apache-2.0
-description: >-
-  GPU-accelerated Mean-CVaR portfolio optimization on NVIDIA cuOpt: optimal
-  portfolio construction, CVaR and mean-CVaR optimization, efficient frontier
-  generation, KDE/Gaussian scenario generation, strategy backtesting, and dynamic
-  rebalancing. Not for generic finance Q&A, price forecasting/ML, or non-portfolio
-  (e.g. vehicle-routing) optimization.
 metadata:
-  author: NVIDIA-AI-Blueprints <jgoldberg@nvidia.com>
+  author: Jake Goldberg <jgoldberg@nvidia.com>
   tags:
     - portfolio-optimization
     - cvar

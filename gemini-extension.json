@@ -1,0 +1,6 @@
+{
+  "name": "nvidia-cufolio-skills",
+  "description": "Agent skill for NVIDIA-accelerated Mean-CVaR portfolio optimization with cuOpt: optimal portfolios, efficient frontier, backtesting, and rebalancing.",
+  "version": "25.10.00",
+  "contextFileName": "AGENTS.md"
+}
