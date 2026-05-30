@@ -84,23 +84,30 @@ def test_under_line_budget(skill_text):
     )
 
 
-def test_evals_have_cases(evals):
-    assert isinstance(evals.get("cases"), list) and evals["cases"], (
-        "evals.json must contain a non-empty 'cases' list"
+# NV-BASE/NV-ACES contract: ground_truth describes the useful outcome, not
+# activation metadata or a scoring rubric. These substrings are disallowed.
+DISALLOWED_GROUND_TRUTH = (
+    "should trigger",
+    "should not trigger",
+    "must not activate",
+    "must not trigger",
+    "did not use",
+    "test case",
+    "handled by",
+)
+
+
+def test_evals_is_nonempty_array(evals):
+    # NV-BASE/NV-ACES contract: evals.json is a top-level JSON array of cases.
+    assert isinstance(evals, list) and evals, (
+        "evals.json must be a non-empty JSON array"
     )
 
 
 def test_eval_case_schema(evals):
-    required = (
-        "id",
-        "question",
-        "expected_skill",
-        "expected_script",
-        "ground_truth",
-        "expected_behavior",
-    )
+    required = ("id", "question", "expected_skill", "ground_truth", "expected_behavior")
     seen = set()
-    for case in evals["cases"]:
+    for case in evals:
         for field in required:
             assert field in case, f"case {case.get('id')!r} missing field '{field}'"
         case_id = case["id"]
@@ -112,10 +119,36 @@ def test_eval_case_schema(evals):
         )
         assert isinstance(case["ground_truth"], str) and case["ground_truth"].strip()
         assert isinstance(case["expected_behavior"], list) and case["expected_behavior"]
+        if "expected_script" in case:
+            assert case["expected_script"] is None or isinstance(
+                case["expected_script"], str
+            )
+        if "should_trigger" in case:
+            assert isinstance(case["should_trigger"], bool)
+
+
+def test_negative_cases_are_well_formed(evals):
+    # Negatives must be null-skill, should_trigger=false (contract requirement).
+    for case in evals:
+        if case["expected_skill"] is None:
+            assert case.get("should_trigger") is False, (
+                f"{case['id']}: negative case must set should_trigger=false"
+            )
+
+
+def test_ground_truth_describes_outcome(evals):
+    # Reject activation-metadata / rubric phrasing in ground_truth (contract).
+    for case in evals:
+        gt = case["ground_truth"].lower()
+        for phrase in DISALLOWED_GROUND_TRUTH:
+            assert phrase not in gt, (
+                f"{case['id']}: ground_truth must describe the outcome, not "
+                f"contain {phrase!r}"
+            )
 
 
 def test_has_positive_and_negative_cases(evals):
-    expected_skills = [c["expected_skill"] for c in evals["cases"]]
+    expected_skills = [c["expected_skill"] for c in evals]
     assert any(s == "cufolio" for s in expected_skills), (
         "need >= 1 positive case (expected_skill == 'cufolio')"
     )
