@@ -48,7 +48,7 @@ download_data("data/stock_data", datasets=["sp500"])   # also available: "sp100"
 
 Canonical workflow — apply the **Defaults** below and the **Traps** without prompting:
 
-1. **Load price data** (`data/stock_data/sp500.csv`; download first if missing, see Setup) and filter to the requested tickers on the DataFrame.
+1. **Load price data** from `data/stock_data/sp500.csv`. If it is missing, **download it** with `cufolio.utils.download_data("data/stock_data", datasets=["sp500"])` — never glob/search for, substitute, or fabricate price data. Then filter to the requested tickers on the DataFrame.
 2. **Compute returns** with `utils.calculate_returns(...)` (`return_type="LOG"`).
 3. **Generate scenarios** with `cvar_utils.generate_cvar_data(...)` (KDE, `device="GPU"`).
 4. **Define `CvarParameters`** with explicit `w_min`/`w_max` — **required** (CVaR raises a clear error if they're unset); use `w_min=0.0, w_max=1.0` for long-only. For a "build the optimal portfolio" request also set `c_max=0.0` to avoid the all-cash optimum (see Traps).
@@ -149,7 +149,7 @@ Each bullet lists the canonical entry point and the source module to consult for
 - **Scenarios** — `cvar_utils.generate_cvar_data(returns_dict, scenario_generation_settings)` (`cufolio/cvar_utils.py`).
 - **CVaR problem** — `cvar_optimizer.CVaR(returns_dict, cvar_params)` (`cufolio/cvar_optimizer.py`).
 - **Solve** — `cvar_problem.solve_optimization_problem(solver_settings=SOLVER_SETTINGS)` (`cufolio/cvar_optimizer.py`). Pass the canonical dict from the Solver section above; the same call works for a single solve or inside a loop.
-- **Backtest** — `backtest.portfolio_backtester(...)` / `backtester.backtest_against_benchmarks(...)` (`cufolio/backtest.py`). `test_method` is one of `"historical"`, `"kde_simulation"`, `"gaussian_simulation"`; returns cumulative returns, Sharpe, Sortino, max drawdown.
+- **Backtest** — build `portfolio.Portfolio` objects, then call `backtest.portfolio_backtester(test_portfolio, returns_dict, test_method="historical", benchmark_portfolios=[...])` and `.backtest_against_benchmarks(...)` (`cufolio/backtest.py`); it returns cumulative returns, Sharpe, Sortino, max drawdown. **Use these functions — do not hand-roll a rolling-window backtest loop.** `test_method` is one of `"historical"`, `"kde_simulation"`, `"gaussian_simulation"`.
 - **Efficient frontier** — `cvar_utils.create_efficient_frontier(returns_dict, cvar_params, solver_settings=SOLVER_SETTINGS, ra_num=...)` (`cufolio/cvar_utils.py`). Returns `(results_df, fig, ax)`; `results_df` has per-portfolio metrics (return, CVaR, variance, volatility, sharpe, risk_aversion) **plus a `weights` column ({ticker: weight} dict) and `cash`** — so it covers both the plot/metrics and a weights-by-risk-aversion table.
 - **Rebalancing** — `rebalance.rebalance_portfolio(...)` / `rebal_obj.re_optimize(...)` (`cufolio/rebalance.py`). The re-optimization trigger is a dict: `re_optimize_criteria={"type": ..., "threshold": ..., "norm": ...}`, where `type` is one of `"pct_change"`, `"drift_from_optimal"` (also needs `"norm"`: `1` or `2`), or `"max_drawdown"`. For a fixed monthly schedule, use `"drift_from_optimal"` with `threshold=0`.
 - **Plots** — `portfolio.plot_portfolio(...)` (`cufolio/portfolio.py`), `backtester.backtest_against_benchmarks(plot_returns=True)`, `utils.portfolio_plot_with_backtest(...)`, `rebal_obj.plot_weights_vs_prices(...)`.
@@ -170,6 +170,7 @@ Each bullet lists the canonical entry point and the source module to consult for
 - *"Build the optimal portfolio from the S&P 500."* → load data, compute LOG returns, generate KDE scenarios on GPU, `CvarParameters(w_min=0.0, w_max=1.0, c_max=0.0, confidence=0.95)`, solve with the cuOpt `SOLVER_SETTINGS`; report the diversified allocation, expected return, and CVaR.
 - *"Plot the efficient frontier."* → `cvar_utils.create_efficient_frontier(..., ra_num=25)`; present `(results_df, fig)`.
 - *"Give me a weights-by-risk-aversion table."* → `create_efficient_frontier(...)`, then expand `results_df["weights"]` into a per-asset table (`pd.DataFrame(results_df["weights"].tolist())`).
+- *"Backtest the optimal portfolio against benchmarks."* → build `Portfolio` objects (the optimal + an equal-weight benchmark), then `backtest.portfolio_backtester(optimal, returns_dict, test_method="historical", benchmark_portfolios=[equal_weight]).backtest_against_benchmarks()`; report Sharpe / Sortino / max drawdown. Don't write your own loop.
 - *"Backtest a monthly rebalancing strategy."* → `rebalance.rebalance_portfolio(..., re_optimize_criteria={"type": "drift_from_optimal", "threshold": 0, "norm": 1})` then `re_optimize(transaction_cost_factor=...)`.
 
 ## Limitations
