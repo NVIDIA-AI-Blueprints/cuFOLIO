@@ -770,8 +770,8 @@ def create_efficient_frontier(
             portfolio combinations. Defaults to True.
         discretization_params (dict, optional): Parameters for discretized
             portfolios. Dict with keys: weight_discretization, max_assets,
-            min_weight, max_weight, sum_to_one. Defaults to
-            {"weight_discretization": 10, "max_assets": 5}.
+            min_weight, max_weight. Defaults to {"weight_discretization": 10,
+            "max_assets": 5, "min_weight": 0.0, "max_weight": 1.0}.
         save_path (str, optional): Path to save the figure. Defaults to None.
         title (str, optional): Custom plot title. Defaults to auto-generated.
         print_portfolio_results (bool, optional): Whether to print the portfolio

@@ -150,6 +150,9 @@ class TestCvarParameters:
         assert params.confidence == 0.95
         assert params.cardinality is None
         assert params.T_tar is None
+        # Long-only feasible weight bounds (not the old inverted 1.0 / 0.0).
+        assert params.w_min == 0.0
+        assert params.w_max == 1.0
 
     def test_update_confidence_valid(self):
         params = CvarParameters()

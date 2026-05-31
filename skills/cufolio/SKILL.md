@@ -51,7 +51,7 @@ Canonical workflow — apply the **Defaults** below and the **Traps** without pr
 1. **Load price data** (`data/stock_data/sp500.csv`; download first if missing, see Setup) and filter to the requested tickers on the DataFrame.
 2. **Compute returns** with `utils.calculate_returns(...)` (`return_type="LOG"`).
 3. **Generate scenarios** with `cvar_utils.generate_cvar_data(...)` (KDE, `device="GPU"`).
-4. **Define `CvarParameters`** explicitly: `w_min=0.0, w_max=1.0` (Trap 1) and, for a "build the optimal portfolio" request, `c_max=0.0` to avoid the all-cash optimum (Trap 2).
+4. **Define `CvarParameters`** — defaults are long-only (`w_min=0.0, w_max=1.0`); for a "build the optimal portfolio" request set `c_max=0.0` to avoid the all-cash optimum (see Traps).
 5. **Solve on GPU** via `cvar_optimizer.CVaR(...).solve_optimization_problem(SOLVER_SETTINGS)` — always cuOpt, never a CPU solver (see Solver).
 6. **Deliver** the allocation + expected return + CVaR, plus any requested efficient frontier, backtest, or rebalancing output (see API).
 
@@ -89,11 +89,7 @@ Override only when the user explicitly specifies a different value. Do not promp
 
 These are non-obvious behaviors that have caused wrong or degenerate results on past runs. Apply the fix without prompting the user.
 
-### Trap 1 — `CvarParameters` has inverted weight-bound defaults
-
-`CvarParameters()` with no weight args defaults to `w_min=1.0`, `w_max=0.0` (infeasible). For long-only optimization you MUST set `w_min=0.0`, `w_max=1.0` explicitly.
-
-### Trap 2 — Degenerate all-cash optimum on small universes
+### Trap — Degenerate all-cash optimum on small universes
 
 Observed on small universes: the default `c_max=1.0` (cash is a feasible asset) combined with the optimizer's internal `scale_risk_aversion=True` heuristic — which rescales any user-provided `risk_aversion` down to ≈ `max_i(μ_i / CVaR_i)` — can make cash tie the best single risky asset, so cuOpt returns a degenerate 100% cash allocation.
 
@@ -180,4 +176,3 @@ Each bullet lists the canonical entry point and the source module to consult for
 
 - Requires an NVIDIA GPU with cuOpt + cuML; there is no CPU fallback (CPU solvers are intentionally disallowed — see Solver).
 - The default S&P 500 dataset is a historical snapshot and may omit current constituents; unavailable tickers are dropped (see Data).
-- Known upstream quirk: `CvarParameters` ships infeasible weight-bound defaults (`w_min=1.0`, `w_max=0.0`); always set them explicitly (see Trap 1).

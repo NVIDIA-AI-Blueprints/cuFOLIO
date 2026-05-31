@@ -12,9 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Optional, Union
+from typing import Optional
 
-import numpy as np
 from pydantic import field_validator
 
 from .base_parameters import BaseParameters
@@ -28,9 +27,8 @@ class CvarParameters(BaseParameters):
     for the CVaR risk measure and an optional hard ``cvar_limit``.
     """
 
-    # Override weight bound defaults for CVaR
-    w_min: Union[np.ndarray, dict, float] = 1.0
-    w_max: Union[np.ndarray, dict, float] = 0.0
+    # Weight bounds inherit BaseParameters' long-only defaults (w_min=0.0,
+    # w_max=1.0). Set them explicitly for shorting or per-asset bounds.
 
     # CVaR-specific fields
     confidence: float = 0.95
