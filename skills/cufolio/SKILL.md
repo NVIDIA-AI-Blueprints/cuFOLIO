@@ -111,30 +111,6 @@ cvar_params = CvarParameters(
 
 Keep `c_max=1.0` only when the user explicitly wants cash as a feasible asset (e.g., an efficient-frontier sweep where cash naturally appears at the min-risk corner).
 
-### Trap 3 — `create_efficient_frontier` does not return per-portfolio weights
-
-The function returns `(results_df, fig, ax)`. `results_df` has only metrics columns (return, CVaR, variance, sharpe) — **no per-asset weights**. The internal `portfolios` list is built and discarded before return.
-
-If the user wants a weights-by-risk-aversion table, use the manual loop recipe in the Guidelines section. **Do not** call `create_efficient_frontier` AND a recovery loop — that doubles the solve count for no benefit.
-
-### Trap 4 — `create_efficient_frontier`'s discretized-overlay code path crashes
-
-The default `show_discretized_portfolios=True` triggers an internal call to `evaluate_all_linear_combinations(...)` with a `sum_to_one` kwarg the helper doesn't accept, raising:
-
-```
-evaluate_all_linear_combinations() got an unexpected keyword argument 'sum_to_one'
-```
-
-This is a kwarg-drift bug in the library, independent of the optimization. The 25 cuOpt solves themselves complete fine; only the post-solve overlay fails. **Always pass `show_discretized_portfolios=False`** when calling `create_efficient_frontier` until the underlying signature is fixed:
-
-```python
-results_df, fig, ax = cvar_utils.create_efficient_frontier(
-    returns_dict, cvar_params, solver_settings=SOLVER_SETTINGS,
-    ra_num=25,
-    show_discretized_portfolios=False,   # workaround for kwarg-drift bug
-)
-```
-
 ## Solver — always use cuOpt (GPU)
 
 Use NVIDIA cuOpt for all optimization. **Never use CPU solvers** (e.g. CLARABEL, SCS, ECOS).
@@ -178,7 +154,7 @@ Each bullet lists the canonical entry point and the source module to consult for
 - **CVaR problem** — `cvar_optimizer.CVaR(returns_dict, cvar_params)` (`cufolio/cvar_optimizer.py`).
 - **Solve** — `cvar_problem.solve_optimization_problem(solver_settings=SOLVER_SETTINGS)` (`cufolio/cvar_optimizer.py`). Pass the canonical dict from the Solver section above; the same call works for a single solve or inside a loop.
 - **Backtest** — `backtest.portfolio_backtester(...)` / `backtester.backtest_against_benchmarks(...)` (`cufolio/backtest.py`). `test_method` is one of `"historical"`, `"kde_simulation"`, `"gaussian_simulation"`; returns cumulative returns, Sharpe, Sortino, max drawdown.
-- **Efficient frontier** — `cvar_utils.create_efficient_frontier(returns_dict, cvar_params, solver_settings=SOLVER_SETTINGS, ra_num=...)` (`cufolio/cvar_utils.py`). Returns `(results_df, fig, ax)` where `results_df` is **metrics-only** (no per-asset weights — see Trap 3). Use this when the deliverable is the plot + metrics. If the user needs a weights table, use the loop recipe in Guidelines instead.
+- **Efficient frontier** — `cvar_utils.create_efficient_frontier(returns_dict, cvar_params, solver_settings=SOLVER_SETTINGS, ra_num=...)` (`cufolio/cvar_utils.py`). Returns `(results_df, fig, ax)`; `results_df` has per-portfolio metrics (return, CVaR, variance, volatility, sharpe, risk_aversion) **plus a `weights` column ({ticker: weight} dict) and `cash`** — so it covers both the plot/metrics and a weights-by-risk-aversion table.
 - **Rebalancing** — `rebalance.rebalance_portfolio(...)` / `rebal_obj.re_optimize(...)` (`cufolio/rebalance.py`). The re-optimization trigger is a dict: `re_optimize_criteria={"type": ..., "threshold": ..., "norm": ...}`, where `type` is one of `"pct_change"`, `"drift_from_optimal"` (also needs `"norm"`: `1` or `2`), or `"max_drawdown"`. For a fixed monthly schedule, use `"drift_from_optimal"` with `threshold=0`.
 - **Plots** — `portfolio.plot_portfolio(...)` (`cufolio/portfolio.py`), `backtester.backtest_against_benchmarks(plot_returns=True)`, `utils.portfolio_plot_with_backtest(...)`, `rebal_obj.plot_weights_vs_prices(...)`.
 - **Settings models** — `ReturnsComputeSettings`, `ScenarioGenerationSettings`, `KDESettings`, `ApiSettings` in `cufolio/settings.py`; `CvarParameters` in `cufolio/cvar_parameters.py`.
@@ -188,33 +164,7 @@ Each bullet lists the canonical entry point and the source module to consult for
 - **SKILL.md is the primary reference.** It covers the typical workflow; consult the source module listed on each API bullet for anything it does not spell out (full signatures, optional kwargs, return shapes). Use this path before reimplementing behaviour.
 - **Always use cuOpt GPU solver** — never fall back to CPU solvers (CLARABEL, SCS, ECOS). Use `cp.CUOPT` or `api="cuopt_python"`.
 - **Always pass the canonical `SOLVER_SETTINGS`** (`{"solver": cp.CUOPT, "verbose": False, "solver_method": "PDLP"}`) to every solve call. Keep the `solver_method="PDLP"` entry.
-- **Efficient frontier — pick ONE recipe, never both:**
-
-  **(a) Plot + metrics only** (no per-portfolio weights needed): call `cvar_utils.create_efficient_frontier(...)` and use its `results_df` + figure.
-
-  **(b) Need per-portfolio weights** (CSV table, allocation drilldown): write the loop directly, since `create_efficient_frontier` does not expose weights:
-
-  ```python
-  from cufolio import cvar_optimizer
-  problem = cvar_optimizer.CVaR(returns_dict, cvar_params)
-  risk_aversions = np.logspace(-3, 1, 25)[::-1]
-  rows = []
-  for ra in risk_aversions:
-      problem.params.update_risk_aversion(ra)
-      problem.risk_aversion_param.value = ra
-      result, portfolio = problem.solve_optimization_problem(SOLVER_SETTINGS)
-      row = dict(result); row["risk_aversion"] = float(ra)
-      w = np.asarray(portfolio.weights).flatten()
-      for t, wv in zip(returns_dict["tickers"], w):
-          row[f"w_{t}"] = float(wv)
-      row["cash"] = float(np.asarray(portfolio.cash).squeeze())
-      rows.append(row)
-  results_df = pd.DataFrame(rows)
-  ```
-
-  Never call `create_efficient_frontier` *and* run this loop — that doubles the solve count.
-
-  **Do not substitute `evaluate_all_linear_combinations`** — it is a weight-grid sweep without the optimizer, not a frontier replacement.
+- **Efficient frontier:** call `cvar_utils.create_efficient_frontier(returns_dict, cvar_params, solver_settings=SOLVER_SETTINGS, ra_num=25)`. `results_df` carries both the metrics and a per-portfolio `weights` dict (plus `cash`), so for a weights-by-risk-aversion table just expand that column — e.g. `pd.DataFrame(results_df["weights"].tolist(), index=results_df.index)`. No separate solve loop is needed. (`evaluate_all_linear_combinations` is a weight-grid sweep without the optimizer — not a frontier replacement.)
 - All settings must be Pydantic objects (`ReturnsComputeSettings`, `ScenarioGenerationSettings`, `KDESettings`, `CvarParameters`). Do not pass plain dicts.
 - Import cuFOLIO modules from the installed `cufolio` package: e.g. `from cufolio import cvar_optimizer, cvar_utils, backtest, utils, rebalance, portfolio`, `from cufolio.settings import ReturnsComputeSettings, ScenarioGenerationSettings, KDESettings, ApiSettings`, `from cufolio.cvar_parameters import CvarParameters`.
 - For fixed-schedule rebalancing via `drift_from_optimal` with `threshold=0`, set `plot_title` to reflect the strategy (e.g. "Monthly Rebalancing") instead of the default.
@@ -222,12 +172,12 @@ Each bullet lists the canonical entry point and the source module to consult for
 ## Examples
 
 - *"Build the optimal portfolio from the S&P 500."* → load data, compute LOG returns, generate KDE scenarios on GPU, `CvarParameters(w_min=0.0, w_max=1.0, c_max=0.0, confidence=0.95)`, solve with the cuOpt `SOLVER_SETTINGS`; report the diversified allocation, expected return, and CVaR.
-- *"Plot the efficient frontier."* → `cvar_utils.create_efficient_frontier(..., ra_num=25, show_discretized_portfolios=False)` (Trap 4); present `(results_df, fig)`.
-- *"Give me a weights-by-risk-aversion table."* → use the manual solve loop (Trap 3), not `create_efficient_frontier`.
+- *"Plot the efficient frontier."* → `cvar_utils.create_efficient_frontier(..., ra_num=25)`; present `(results_df, fig)`.
+- *"Give me a weights-by-risk-aversion table."* → `create_efficient_frontier(...)`, then expand `results_df["weights"]` into a per-asset table (`pd.DataFrame(results_df["weights"].tolist())`).
 - *"Backtest a monthly rebalancing strategy."* → `rebalance.rebalance_portfolio(..., re_optimize_criteria={"type": "drift_from_optimal", "threshold": 0, "norm": 1})` then `re_optimize(transaction_cost_factor=...)`.
 
 ## Limitations
 
 - Requires an NVIDIA GPU with cuOpt + cuML; there is no CPU fallback (CPU solvers are intentionally disallowed — see Solver).
 - The default S&P 500 dataset is a historical snapshot and may omit current constituents; unavailable tickers are dropped (see Data).
-- Known upstream library quirks (inverted `CvarParameters` weight-bound defaults; `create_efficient_frontier` returning no weights and crashing on the discretized overlay) are worked around via the **Traps** above, not yet fixed upstream.
+- Known upstream quirk: `CvarParameters` ships infeasible weight-bound defaults (`w_min=1.0`, `w_max=0.0`); always set them explicitly (see Trap 1).

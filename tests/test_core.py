@@ -3,6 +3,8 @@ import matplotlib
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
+
 from cufolio.backtest import portfolio_backtester
 from cufolio.cvar_data import CvarData
 from cufolio.cvar_optimizer import CVaR
@@ -23,7 +25,6 @@ from cufolio.utils import (
     compare_results,
     compute_absolute_returns,
 )
-from pydantic import ValidationError
 
 matplotlib.use("Agg")
 
@@ -414,6 +415,47 @@ class TestEfficientFrontier:
         for _, row in results_df.iterrows():
             assert row["variance"] >= 0, "variance must be non-negative"
             assert np.isfinite(row["sharpe"]), "sharpe should be finite"
+
+    def test_frontier_exposes_per_asset_weights(
+        self, returns_dict, cvar_data, cvar_params
+    ):
+        returns_dict["cvar_data"] = cvar_data
+        results_df, _fig, _ax = create_efficient_frontier(
+            returns_dict,
+            cvar_params,
+            {"solver": cp.CLARABEL, "verbose": False},
+            ra_num=3,
+            min_risk_aversion=-1,
+            max_risk_aversion=1,
+            show_plot=False,
+            show_discretized_portfolios=False,
+            benchmark_portfolios=False,
+            print_portfolio_results=False,
+        )
+        assert "weights" in results_df.columns
+        assert "cash" in results_df.columns
+        first = results_df["weights"].iloc[0]
+        assert isinstance(first, dict)
+        assert set(first.keys()) == set(TICKERS)
+
+    def test_discretized_overlay_runs(self, returns_dict, cvar_data, cvar_params):
+        # Regression: show_discretized_portfolios=True with the default
+        # discretization_params used to raise TypeError via a stale 'sum_to_one'
+        # kwarg. It must now run end-to-end (NumPy fallback on CPU).
+        returns_dict["cvar_data"] = cvar_data
+        results_df, _fig, _ax = create_efficient_frontier(
+            returns_dict,
+            cvar_params,
+            {"solver": cp.CLARABEL, "verbose": False},
+            ra_num=2,
+            min_risk_aversion=-1,
+            max_risk_aversion=1,
+            show_plot=False,
+            show_discretized_portfolios=True,
+            benchmark_portfolios=False,
+            print_portfolio_results=False,
+        )
+        assert len(results_df) == 2
 
 
 # ---------------------------------------------------------------------------

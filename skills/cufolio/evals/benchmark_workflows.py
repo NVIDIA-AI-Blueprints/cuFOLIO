@@ -179,7 +179,7 @@ def run_build_optimal(returns_dict: dict) -> tuple[dict, Portfolio]:
 
 
 def run_efficient_frontier(returns_dict: dict, ra_num: int = 25) -> dict:
-    """SKILL.md: efficient frontier (Trap 4 fix: show_discretized_portfolios=False)."""
+    """SKILL.md: efficient frontier (results_df carries metrics + per-asset weights)."""
     results_df, fig, _ = cvar_utils.create_efficient_frontier(
         returns_dict,
         _full_invested_params(),
@@ -188,7 +188,7 @@ def run_efficient_frontier(returns_dict: dict, ra_num: int = 25) -> dict:
         min_risk_aversion=-3,
         max_risk_aversion=1,
         show_plot=False,
-        show_discretized_portfolios=False,  # Trap 4
+        show_discretized_portfolios=False,  # skip the discretized overlay (extra compute)
         benchmark_portfolios=False,
         print_portfolio_results=False,
     )
@@ -202,26 +202,25 @@ def run_efficient_frontier(returns_dict: dict, ra_num: int = 25) -> dict:
 
 
 def run_weights_table(returns_dict: dict, n_steps: int = 12) -> dict:
-    """SKILL.md: per-asset weights by risk aversion via the manual loop (Trap 3)."""
-    problem = cvar_optimizer.CVaR(returns_dict, _full_invested_params())
-    risk_aversions = np.logspace(-3, 1, n_steps)[::-1]
-    rows = []
-    for risk_aversion in risk_aversions:
-        problem.params.update_risk_aversion(risk_aversion)
-        problem.risk_aversion_param.value = risk_aversion
-        result, portfolio = problem.solve_optimization_problem(
-            SOLVER_SETTINGS, print_results=False
-        )
-        row = dict(result)
-        row["risk_aversion"] = float(risk_aversion)
-        weights = np.asarray(portfolio.weights, dtype=float).flatten()
-        for ticker, weight in zip(returns_dict["tickers"], weights):
-            row[f"w_{ticker}"] = float(weight)
-        row["cash"] = float(np.asarray(portfolio.cash).squeeze())
-        rows.append(row)
-    table = pd.DataFrame(rows)
-    weight_columns = [c for c in table.columns if c.startswith("w_")]
-    return {"rows": int(len(table)), "weight_columns": int(len(weight_columns))}
+    """SKILL.md: per-asset weights by risk aversion from the frontier's weights column."""
+    results_df, fig, _ = cvar_utils.create_efficient_frontier(
+        returns_dict,
+        _full_invested_params(),
+        SOLVER_SETTINGS,
+        ra_num=n_steps,
+        min_risk_aversion=-3,
+        max_risk_aversion=1,
+        show_plot=False,
+        show_discretized_portfolios=False,
+        benchmark_portfolios=False,
+        print_portfolio_results=False,
+    )
+    _close(fig)
+    weights_table = pd.DataFrame(results_df["weights"].tolist(), index=results_df.index)
+    return {
+        "rows": int(len(weights_table)),
+        "weight_columns": int(weights_table.shape[1]),
+    }
 
 
 def run_backtest(returns_dict: dict, portfolio: Portfolio) -> dict:

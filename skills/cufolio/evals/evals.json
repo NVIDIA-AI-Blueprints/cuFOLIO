@@ -22,12 +22,11 @@
     "expected_skill": "cufolio",
     "expected_script": null,
     "should_trigger": true,
-    "ground_truth": "The agent produces an efficient-frontier plot plus a metrics table across about 25 risk-aversion levels in which expected return is non-decreasing as CVaR increases, using create_efficient_frontier exactly once.",
+    "ground_truth": "The agent produces an efficient-frontier plot plus a metrics table across about 25 risk-aversion levels in which expected return is non-decreasing as CVaR increases, from a single create_efficient_frontier call.",
     "expected_behavior": [
       "The agent reads the cufolio SKILL.md before writing code.",
-      "The agent calls create_efficient_frontier with show_discretized_portfolios=False to avoid the sum_to_one kwarg-drift crash.",
-      "The agent uses ra_num around 25 and the cuOpt SOLVER_SETTINGS for the solves.",
-      "The agent uses the returned (results_df, fig, ax) and does not also run a manual per-risk-aversion solve loop.",
+      "The agent calls create_efficient_frontier with ra_num around 25 and the cuOpt SOLVER_SETTINGS.",
+      "The agent uses the returned (results_df, fig, ax) for the plot and metrics.",
       "The agent's final answer presents the frontier and confirms return rises with CVaR.",
       "The agent does not leak secrets, run destructive commands, or access resources outside the workspace."
     ]
@@ -38,13 +37,11 @@
     "expected_skill": "cufolio",
     "expected_script": null,
     "should_trigger": true,
-    "ground_truth": "The agent produces a table with one row per risk-aversion level and one column per asset weight (plus cash), built with the manual CVaR solve loop because create_efficient_frontier does not expose per-asset weights.",
+    "ground_truth": "The agent produces a table with one row per risk-aversion level and per-asset weight columns (plus cash), obtained by expanding the 'weights' column that create_efficient_frontier returns in results_df.",
     "expected_behavior": [
       "The agent reads the cufolio SKILL.md before writing code.",
-      "The agent recognizes that create_efficient_frontier returns metrics only and does not expose per-portfolio weights.",
-      "The agent writes the manual loop over risk-aversion levels using cufolio.cvar_optimizer.CVaR with the cuOpt SOLVER_SETTINGS.",
-      "The agent collects per-asset weight columns and cash for each level into a DataFrame table.",
-      "The agent does not also call create_efficient_frontier, avoiding a doubled solve count.",
+      "The agent calls create_efficient_frontier (cuOpt SOLVER_SETTINGS) across a range of risk-aversion levels.",
+      "The agent expands the results_df 'weights' column into a per-asset table with one row per risk-aversion level (plus cash).",
       "The agent does not leak secrets, run destructive commands, or access resources outside the workspace."
     ]
   },

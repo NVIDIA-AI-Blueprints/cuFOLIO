@@ -781,7 +781,10 @@ def create_efficient_frontier(
 
     Returns:
         tuple: (results_df, fig, ax) containing the optimization results DataFrame,
-            matplotlib figure, and axes objects.
+            matplotlib figure, and axes objects. results_df includes per-portfolio
+            metrics (return, CVaR, variance, volatility, sharpe, risk_aversion) plus
+            a ``weights`` column ({ticker: weight} dict) and ``cash`` for each
+            risk-aversion level.
 
     Example:
         >>> regime = {"name": "full_period", "range": ("2020-01-01", "2023-12-31")}
@@ -802,7 +805,6 @@ def create_efficient_frontier(
             "max_assets": 5,
             "min_weight": 0.0,
             "max_weight": 1.0,
-            "sum_to_one": True,
         }
 
     # Color schemes
@@ -865,6 +867,13 @@ def create_efficient_frontier(
         result_row["sharpe"] = _annualized_sharpe_ratio(
             result_row["return"], result_row["volatility"]
         )
+        result_row["weights"] = dict(
+            zip(
+                returns_dict["tickers"],
+                np.asarray(portfolio.weights, dtype=float).flatten().tolist(),
+            )
+        )
+        result_row["cash"] = float(np.asarray(portfolio.cash).squeeze())
 
         results_data.append(result_row)
         portfolios.append(portfolio)
