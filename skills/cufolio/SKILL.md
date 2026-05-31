@@ -51,7 +51,7 @@ Canonical workflow — apply the **Defaults** below and the **Traps** without pr
 1. **Load price data** (`data/stock_data/sp500.csv`; download first if missing, see Setup) and filter to the requested tickers on the DataFrame.
 2. **Compute returns** with `utils.calculate_returns(...)` (`return_type="LOG"`).
 3. **Generate scenarios** with `cvar_utils.generate_cvar_data(...)` (KDE, `device="GPU"`).
-4. **Define `CvarParameters`** — defaults are long-only (`w_min=0.0, w_max=1.0`); for a "build the optimal portfolio" request set `c_max=0.0` to avoid the all-cash optimum (see Traps).
+4. **Define `CvarParameters`** with explicit `w_min`/`w_max` — **required** (CVaR raises a clear error if they're unset); use `w_min=0.0, w_max=1.0` for long-only. For a "build the optimal portfolio" request also set `c_max=0.0` to avoid the all-cash optimum (see Traps).
 5. **Solve on GPU** via `cvar_optimizer.CVaR(...).solve_optimization_problem(SOLVER_SETTINGS)` — always cuOpt, never a CPU solver (see Solver).
 6. **Deliver** the allocation + expected return + CVaR, plus any requested efficient frontier, backtest, or rebalancing output (see API).
 

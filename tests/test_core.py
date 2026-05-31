@@ -145,39 +145,42 @@ class TestCvarData:
 
 
 class TestCvarParameters:
+    def test_requires_explicit_weight_bounds(self):
+        # CVaR has no silent default bounds; constructing without w_min/w_max
+        # must fail fast with a clear error (not infeasible numbers).
+        with pytest.raises(ValueError):
+            CvarParameters()
+
     def test_defaults(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         assert params.confidence == 0.95
         assert params.cardinality is None
         assert params.T_tar is None
-        # Long-only feasible weight bounds (not the old inverted 1.0 / 0.0).
-        assert params.w_min == 0.0
-        assert params.w_max == 1.0
 
     def test_update_confidence_valid(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         params.update_confidence(0.99)
         assert params.confidence == 0.99
 
     def test_update_confidence_invalid(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         with pytest.raises(ValueError):
             params.update_confidence(0.0)
         with pytest.raises(ValueError):
             params.update_confidence(1.5)
 
     def test_update_risk_aversion_invalid(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         with pytest.raises(ValueError):
             params.update_risk_aversion(-1.0)
 
     def test_update_cardinality_invalid(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         with pytest.raises(ValueError):
             params.update_cardinality(-3)
 
     def test_update_c_min_invalid(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         with pytest.raises(ValueError):
             params.update_c_min(-0.1)
 
