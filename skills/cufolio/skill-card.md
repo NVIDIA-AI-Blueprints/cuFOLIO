@@ -19,7 +19,7 @@ Risk: Review before execution as proposals could introduce incorrect or misleadi
 Mitigation: Review and scan skill before deployment. <br>
 
 ## Reference(s): <br>
-- [Quantitative Portfolio Optimization README](https://github.com/NVIDIA-AI-Blueprints/quantitative-portfolio-optimization) <br>
+- [Quantitative Portfolio Optimization README](https://github.com/NVIDIA-AI-Blueprints/cuFOLIO) <br>
 - [Brev Launchable](https://brev.nvidia.com/launchable/deploy?launchableID=env-360InRZzyHqDnJYQKIxaSggF8xI) <br>
 - [Eval dataset](evals/evals.json) <br>
 

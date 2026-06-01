@@ -540,9 +540,7 @@ class TestBacktester:
         assert 0 <= mdd <= 1, "max drawdown should be between 0 and 1"
 
     def test_cumulative_returns_anchor_to_regime_start(self):
-        dates = pd.to_datetime(
-            ["2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"]
-        )
+        dates = pd.to_datetime(["2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"])
         prices = pd.DataFrame(
             {
                 "AAPL": [100.0, 101.0, 102.0, 103.0],

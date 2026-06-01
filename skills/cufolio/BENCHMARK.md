@@ -59,7 +59,7 @@ are needed (Trap 3), and always solving on GPU with cuOpt (`SOLVER_SETTINGS`).
 ## Track B — Skill performance standards (Layer 3)
 
 Deterministic end-to-end runs of the documented workflows, graded against
-[`evals/thresholds.toml`](evals/thresholds.toml). Source: `tests/test_skill_benchmarks.py`.
+[`references/benchmarks/thresholds.toml`](references/benchmarks/thresholds.toml). Source: `tests/test_skill_benchmarks.py`.
 
 | Workflow | Standard | Result |
 |---|---|---|
@@ -74,7 +74,7 @@ Deterministic end-to-end runs of the documented workflows, graded against
 ```bash
 # Track B (no API key; needs GPU). Prints a metrics table + PASS/FAIL:
 uv run pytest -m gpu tests/test_skill_benchmarks.py -v
-uv run python skills/cufolio/evals/benchmark_workflows.py --check
+uv run python skills/cufolio/references/benchmarks/benchmark_workflows.py --check
 
 # Track A (needs NVIDIA_INFERENCE_KEY + GPU), per evals/EVAL.md:
 nv-base validate --external skills/cufolio

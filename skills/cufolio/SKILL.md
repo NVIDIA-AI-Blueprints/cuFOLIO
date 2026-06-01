@@ -1,8 +1,18 @@
 ---
 name: cufolio
 version: "25.10.00"
-description: Build GPU-accelerated Mean-CVaR portfolios with NVIDIA cuOpt — CVaR optimization, efficient frontier, scenario generation, backtesting, and rebalancing.
+description: Use when a user asks to build, optimize, backtest, rebalance, or analyze a stock portfolio with Mean-CVaR, efficient frontiers, scenario generation, or NVIDIA cuOpt.
 license: Apache-2.0
+author: Jake Goldberg <jgoldberg@nvidia.com>
+tags:
+  - portfolio-optimization
+  - cvar
+  - cuopt
+  - quantitative-finance
+  - gpu
+tools:
+  - shell
+  - python
 metadata:
   author: Jake Goldberg <jgoldberg@nvidia.com>
   tags:
@@ -22,158 +32,190 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Purpose
 
-Build and analyze quantitative portfolios with NVIDIA-accelerated Mean-CVaR
-optimization: compute returns, generate scenarios, solve CVaR-optimal allocations on
-the cuOpt GPU solver, trace the efficient frontier, backtest, and rebalance. Applies
-whenever a task is about constructing or evaluating a portfolio of assets from price data.
+Build and analyze quantitative portfolios with NVIDIA-accelerated Mean-CVaR optimization. Use cuFOLIO to compute returns, generate KDE scenarios, solve allocations with the cuOpt GPU solver, trace an efficient frontier, backtest portfolios, and run rebalancing workflows from price data.
+
+## When to Use
+
+Use this skill when the task is to:
+
+- Build or optimize a Mean-CVaR portfolio from stock prices.
+- Allocate weights across tickers while controlling downside CVaR risk.
+- Plot or inspect an efficient frontier for a portfolio universe.
+- Produce a weights-by-risk-aversion table.
+- Backtest an optimized portfolio against benchmarks.
+- Rebalance a portfolio on a schedule or drift trigger.
+- Run workflows on an S&P 500, S&P 100, Dow 30, or user-supplied price dataset.
+
+Common trigger phrases include "optimize my portfolio", "build a CVaR portfolio", "use cuFOLIO on these tickers", "solve with cuOpt", "plot the efficient frontier", "show weights by risk aversion", "backtest this allocation", "rebalance monthly", "analyze my holdings with CVaR", "compare allocations", "reduce downside risk", "construct an allocation", "assess allocation options", "stress-test my holdings", "evaluate downside-risk exposure", "review my holdings under weight caps", "compare benchmark portfolios", "simulate CVaR scenarios", "screen portfolio risk", "optimize holdings under constraints", and "find a lower-risk allocation".
+
+Do not use it for generic finance summaries, price forecasting, neural-network training, vehicle routing, or non-portfolio optimization.
+
+## Prerequisites
+
+- Python environment with the installed `cufolio` package.
+- NVIDIA GPU runtime with cuOpt and cuML installed.
+- CUDA extra matching the host, such as `uv sync --extra cuda12` or `uv sync --extra cuda13`.
+- `cvxpy` exposing `cp.CUOPT`.
+- Network access on first run if the default price CSV must be downloaded.
 
 ## Setup
 
-This skill drives the installed `cufolio` Python package (GPU-accelerated; requires
-NVIDIA cuOpt + cuML). It assumes that environment is already available — e.g. the
-[Brev launchable](https://brev.nvidia.com/launchable/deploy?launchableID=env-360InRZzyHqDnJYQKIxaSggF8xI),
-or a clone of `NVIDIA-AI-Blueprints/quantitative-portfolio-optimization` set up with
-`uv sync --extra cuda12` (or `--extra cuda13`). Import everything from the `cufolio`
-package (see **API** and **Guidelines**).
+This skill drives the installed `cufolio` package. A ready environment can come from the Brev launchable or from `NVIDIA-AI-Blueprints/cuFOLIO` after installing the matching CUDA extra.
 
-The default price dataset is **not** shipped in the repo (it is gitignored). If
-`data/stock_data/sp500.csv` is missing, download it first:
+In packaged agent/eval sandboxes, `cufolio` may be available through `PYTHONPATH` rather than as a separately published wheel. Verify the local package with `python -c "import cufolio"` before declaring it missing. Do not `pip install cufolio`, do not reimplement cuFOLIO workflows from scratch, and do not replace the package APIs with generic pandas/scipy/cvxpy portfolio code.
+
+For concrete implementation details, use `references/workflows/agent_recipes.py` as the source of truth. It contains exact working shapes for loading prices, preparing returns, solving with cuOpt, building a 25-point frontier, backtesting against equal weight, and calling the rebalancer.
+
+The default dataset is `data/stock_data/sp500.csv`. It is gitignored. Before a first-run download, tell the user this fetches public market data through the cuFOLIO/yfinance data helper and ask them to confirm:
 
 ```python
+import cvxpy as cp
+from cufolio.cvar_parameters import CvarParameters
 from cufolio.utils import download_data
-download_data("data/stock_data", datasets=["sp500"])   # also available: "sp100", "dow30"
-```
 
-## Instructions
-
-Canonical workflow — apply the **Defaults** below and the **Traps** without prompting:
-
-1. **Load price data** from `data/stock_data/sp500.csv`. If it is missing, **download it** with `cufolio.utils.download_data("data/stock_data", datasets=["sp500"])` — never glob/search for, substitute, or fabricate price data. Then filter to the requested tickers on the DataFrame.
-2. **Compute returns** with `utils.calculate_returns(...)` (`return_type="LOG"`).
-3. **Generate scenarios** with `cvar_utils.generate_cvar_data(...)` (KDE, `device="GPU"`).
-4. **Define `CvarParameters`** with explicit `w_min`/`w_max` — **required** (CVaR raises a clear error if they're unset); use `w_min=0.0, w_max=1.0` for long-only. For a "build the optimal portfolio" request also set `c_max=0.0` to avoid the all-cash optimum (see Traps).
-5. **Solve on GPU** via `cvar_optimizer.CVaR(...).solve_optimization_problem(SOLVER_SETTINGS)` — always cuOpt, never a CPU solver (see Solver).
-6. **Deliver** the allocation + expected return + CVaR, plus any requested efficient frontier, backtest, or rebalancing output (see API).
-
-See **Traps** for the non-obvious fixes, **Solver** for the canonical settings, and **API** for entry points and source modules.
-
-## Data
-
-Default dataset: `data/stock_data/sp500.csv` — daily prices for S&P 500 constituents
-(historical snapshot, ~397 tickers). Use this unless the user supplies a different file
-or tickers. If the file is absent, fetch it via `download_data` (see **Setup**).
-
-Coverage notes:
-- Constituents reflect a historical snapshot and may not include every current S&P 500 name. If a requested ticker is not a column in the CSV, drop it and proceed with the rest (log the omission); do not fetch it from an external source unless the user explicitly asks.
-- Ticker filtering is the caller's responsibility — filter the loaded DataFrame to the desired columns before passing it to `utils.calculate_returns`. `regime_dict` does NOT take a tickers field.
-
-## Defaults (use without asking)
-
-| Parameter | Default |
-|---|---|
-| Dataset | `data/stock_data/sp500.csv` |
-| Date range | Full available range in dataset |
-| Portfolio type | Long-only |
-| Max weight | None (unconstrained) |
-| Risk aversion | 1.0 |
-| CVaR confidence | 0.95 |
-| Scenario method | KDE |
-| KDE device | `GPU` |
-| Solver | cuOpt GPU (see Solver section below) |
-| Output | Numerical results + plots (allocation, backtest) |
-| Rebalancing | None unless requested |
-
-Override only when the user explicitly specifies a different value. Do not prompt for confirmation on covered defaults.
-
-## Traps (read before writing code)
-
-These are non-obvious behaviors that have caused wrong or degenerate results on past runs. Apply the fix without prompting the user.
-
-### Trap — Degenerate all-cash optimum on small universes
-
-Observed on small universes: the default `c_max=1.0` (cash is a feasible asset) combined with the optimizer's internal `scale_risk_aversion=True` heuristic — which rescales any user-provided `risk_aversion` down to ≈ `max_i(μ_i / CVaR_i)` — can make cash tie the best single risky asset, so cuOpt returns a degenerate 100% cash allocation.
-
-**Symptom:** allocation prints as `Cash 100.00%` with `Expected Return: 0.0000%`, even with `risk_aversion=1.0` and a healthy stock universe.
-
-**Fix for "build the optimal portfolio" queries:** pin `c_max=0.0` to force full investment via `sum(w)=1`. This matches user intent (a portfolio *of* the named stocks, not "stocks or cash, whichever wins"):
-
-```python
+download_data("data/stock_data", datasets=["sp500"])
+SOLVER_SETTINGS = {"solver": cp.CUOPT, "verbose": False, "solver_method": "PDLP"}
 cvar_params = CvarParameters(
     w_min=0.0, w_max=1.0,
-    c_min=0.0, c_max=0.0,        # force sum(w)=1, no cash
+    c_min=0.0, c_max=0.0,
     risk_aversion=1.0, confidence=0.95,
 )
 ```
 
-Keep `c_max=1.0` only when the user explicitly wants cash as a feasible asset (e.g., an efficient-frontier sweep where cash naturally appears at the min-risk corner).
+## Instructions
 
-## Solver — always use cuOpt (GPU)
+Briefly state the defaults being applied before execution, then use these guardrails:
 
-Use NVIDIA cuOpt for all optimization. **Never use CPU solvers** (e.g. CLARABEL, SCS, ECOS).
+1. Load `data/stock_data/sp500.csv`; if it is missing, ask before downloading `sp500` with `cufolio.utils.download_data`. Do not glob, substitute, or fabricate price data.
+2. Validate user CSVs before solving: require a date-like index or first date column, numeric ticker columns, at least 60 rows after date filtering, and at least one requested ticker. If the user gives start/end dates, slice the price DataFrame before returns computation and report the retained date range. Filter tickers on the price DataFrame before returns are computed. `regime_dict` does not take a ticker field.
+3. Compute LOG returns with `utils.calculate_returns(...)`.
+4. Generate scenarios with `cvar_utils.generate_cvar_data(...)`, KDE, and `KDESettings(device="GPU")`.
+5. Define `CvarParameters` with explicit `w_min` and `w_max`. For ordinary "build the optimal portfolio" requests, set `c_min=0.0` and `c_max=0.0` so the result is fully invested instead of 100% cash.
+6. Build `cvar_optimizer.CVaR(returns_dict, cvar_params)` directly from that returns dictionary; keep tickers, scenario arrays, means, and covariance in the shapes returned by cuFOLIO helpers.
+7. Solve with NVIDIA cuOpt only. Before solving, verify `hasattr(cp, "CUOPT")` and `str(cp.CUOPT) in {str(s) for s in cp.installed_solvers()}`. Pass `SOLVER_SETTINGS` to every single-shot solve or looped frontier solve. Never fall back to CLARABEL, SCS, ECOS, or another CPU solver. If cuOpt is absent, finish validation/setup and report that the GPU/cuOpt runtime is missing instead of fabricating a CPU result.
+8. For custom constraints, map user requests to `CvarParameters`: weight caps to `w_min`/`w_max`, risk appetite to `risk_aversion`, confidence level to `confidence`, cash allowance to `c_max`, and cardinality only when the package exposes an explicit asset-count constraint for the workflow. If constraints conflict (for example, a max weight too low to invest across the requested ticker count), explain the conflict and ask for the constraint to relax instead of guessing.
+9. If the user omits a benchmark for backtesting, use an equal-weight portfolio over the same tickers. If the user omits a constraint, keep the defaults table values and briefly restate consequential assumptions before solving.
+10. Deliver weights sorted by allocation, cash weight, expected return, CVaR, solver label (`cuOpt GPU`), and any requested frontier figure, weights table, backtest metrics, or rebalancing schedule. For tables, include tickers as columns or rows with decimal weights and percentages; for plots, preserve the returned cuFOLIO figure instead of redrawing from scratch.
+11. For report-grade answers, include evidence that the requested workflow actually ran. For an efficient frontier, state `len(results_df)` and use the requested `ra_num` (25 unless the user specifies otherwise). For a weights table, expand `results_df["weights"]` into ticker columns and include `cash` plus `risk_aversion`. For a backtest, include `mean portfolio return`, `sharpe`, `sortino`, and `max drawdown` for both optimized and benchmark portfolios. For rebalancing, include `results_dataframe`, `re_optimize_dates`, and the tail of `cumulative_portfolio_value`.
 
-**Canonical solver settings (use these verbatim):**
+## Canonical Workflow Skeleton
+
+Start positive cuFOLIO tasks from this shape and adapt only the requested output. For complete copyable functions, read `references/workflows/agent_recipes.py` before writing custom code.
+
 ```python
 import cvxpy as cp
+import pandas as pd
+
+from cufolio import backtest, cvar_optimizer, cvar_utils, rebalance, utils
+from cufolio.cvar_parameters import CvarParameters
+from cufolio.portfolio import Portfolio
+from cufolio.settings import KDESettings, ReturnsComputeSettings, ScenarioGenerationSettings
+
+if not hasattr(cp, "CUOPT") or str(cp.CUOPT) not in {str(s) for s in cp.installed_solvers()}:
+    raise RuntimeError("cuOpt GPU solver is required; do not substitute a CPU solver.")
+
 SOLVER_SETTINGS = {"solver": cp.CUOPT, "verbose": False, "solver_method": "PDLP"}
-```
 
-Pass `SOLVER_SETTINGS` to every solve call — single-shot or in a loop. The `solver_method="PDLP"` entry selects the first-order PDLP method used throughout the notebooks; keep it to avoid solver instability on repeated solves.
-
-**Option 1 — CVXPY with cuOpt solver (preferred):**
-```python
-result, portfolio = cvar_problem.solve_optimization_problem(
-    solver_settings=SOLVER_SETTINGS
+prices = utils.get_input_data("data/stock_data/sp500.csv")
+returns_dict = utils.calculate_returns(
+    prices,
+    regime_dict=None,
+    returns_compute_settings=ReturnsComputeSettings(return_type="LOG"),
+)
+returns_dict = cvar_utils.generate_cvar_data(
+    returns_dict,
+    ScenarioGenerationSettings(
+        fit_type="kde",
+        kde_settings=KDESettings(device="GPU"),
+    ),
+)
+cvar_params = CvarParameters(
+    w_min=0.0,
+    w_max=1.0,
+    c_min=0.0,
+    c_max=0.0,
+    risk_aversion=1.0,
+    confidence=0.95,
+)
+optimizer = cvar_optimizer.CVaR(returns_dict, cvar_params)
+result, optimal_portfolio = optimizer.solve_optimization_problem(
+    solver_settings=SOLVER_SETTINGS,
+    print_results=False,
 )
 ```
 
-**Option 2 — cuOpt Python API directly:**
+For an efficient frontier or weights table, call:
+
 ```python
-from cufolio.settings import ApiSettings
-api_settings = ApiSettings(api="cuopt_python")
-optimizer = CVaR(returns_dict, cvar_params, api_settings=api_settings)
-result, portfolio = optimizer.solve_optimization_problem(
-    solver_settings={"time_limit": 60}
+results_df, fig, ax = cvar_utils.create_efficient_frontier(
+    returns_dict,
+    cvar_params,
+    SOLVER_SETTINGS,
+    ra_num=25,
+    show_plot=False,
+    show_discretized_portfolios=False,
+    benchmark_portfolios=False,
+    print_portfolio_results=False,
 )
+weights_table = pd.DataFrame(results_df["weights"].tolist(), index=results_df.index)
 ```
 
-For KDE scenario generation, always set `device='GPU'`:
-```python
-kde_settings = KDESettings(bandwidth=0.01, kernel='gaussian', device='GPU')
-```
+For a benchmark backtest, wrap the solved allocation in `Portfolio(name="cuOpt Optimal", tickers=returns_dict["tickers"], weights=optimal_portfolio.weights, cash=optimal_portfolio.cash)`, create an equal-weight `Portfolio` over the same `returns_dict["tickers"]`, then use `backtest.portfolio_backtester(..., test_method="historical").backtest_against_benchmarks(...)`. The backtester returns `(backtest_results, ax)`.
 
-## API (always use these; never reimplement)
+For monthly rebalancing, write the price DataFrame to a CSV path first. Instantiate `rebalance.rebalance_portfolio(dataset_directory=<csv_path>, ...)` with `re_optimize_criteria={"type": "drift_from_optimal", "threshold": 0, "norm": 1}` and call `re_optimize(transaction_cost_factor=..., plot_title="Monthly Rebalancing")`. The rebalancer returns `(results_dataframe, re_optimize_dates, cumulative_portfolio_value)`.
 
-Each bullet lists the canonical entry point and the source module to consult for full signatures, kwargs, and return shapes. Read the referenced module when you need a detail the bullet does not cover. (In the product repo these modules live under `src/`; they import as `cufolio.*`.)
+## Data and Defaults
 
-- **Returns** — `utils.calculate_returns(input_dataset, regime_dict, returns_compute_settings)` (`cufolio/utils.py`). `input_dataset` is a CSV path or a pre-filtered DataFrame; filter tickers on the DataFrame beforehand. `regime_dict` shape is `{"name": str, "range": (start, end)}` — no `tickers` key, no nested wrapper.
-- **Scenarios** — `cvar_utils.generate_cvar_data(returns_dict, scenario_generation_settings)` (`cufolio/cvar_utils.py`).
-- **CVaR problem** — `cvar_optimizer.CVaR(returns_dict, cvar_params)` (`cufolio/cvar_optimizer.py`).
-- **Solve** — `cvar_problem.solve_optimization_problem(solver_settings=SOLVER_SETTINGS)` (`cufolio/cvar_optimizer.py`). Pass the canonical dict from the Solver section above; the same call works for a single solve or inside a loop.
-- **Backtest** — build `portfolio.Portfolio` objects, then call `backtest.portfolio_backtester(test_portfolio, returns_dict, test_method="historical", benchmark_portfolios=[...])` and `.backtest_against_benchmarks(...)` (`cufolio/backtest.py`); it returns cumulative returns, Sharpe, Sortino, max drawdown. **Use these functions — do not hand-roll a rolling-window backtest loop.** `test_method` is one of `"historical"`, `"kde_simulation"`, `"gaussian_simulation"`.
-- **Efficient frontier** — `cvar_utils.create_efficient_frontier(returns_dict, cvar_params, solver_settings=SOLVER_SETTINGS, ra_num=...)` (`cufolio/cvar_utils.py`). Returns `(results_df, fig, ax)`; `results_df` has per-portfolio metrics (return, CVaR, variance, volatility, sharpe, risk_aversion) **plus a `weights` column ({ticker: weight} dict) and `cash`** — so it covers both the plot/metrics and a weights-by-risk-aversion table.
-- **Rebalancing** — `rebalance.rebalance_portfolio(...)` / `rebal_obj.re_optimize(...)` (`cufolio/rebalance.py`). The re-optimization trigger is a dict: `re_optimize_criteria={"type": ..., "threshold": ..., "norm": ...}`, where `type` is one of `"pct_change"`, `"drift_from_optimal"` (also needs `"norm"`: `1` or `2`), or `"max_drawdown"`. For a fixed monthly schedule, use `"drift_from_optimal"` with `threshold=0`.
-- **Plots** — `portfolio.plot_portfolio(...)` (`cufolio/portfolio.py`), `backtester.backtest_against_benchmarks(plot_returns=True)`, `utils.portfolio_plot_with_backtest(...)`, `rebal_obj.plot_weights_vs_prices(...)`.
-- **Settings models** — `ReturnsComputeSettings`, `ScenarioGenerationSettings`, `KDESettings`, `ApiSettings` in `cufolio/settings.py`; `CvarParameters` in `cufolio/cvar_parameters.py`.
+| Setting | Default |
+|---|---|
+| Dataset | `data/stock_data/sp500.csv` |
+| Date range | Full available range |
+| Portfolio type | Long-only |
+| Max weight | None unless specified |
+| Risk aversion | `1.0` |
+| Confidence | `0.95` |
+| Scenario method | KDE on GPU |
+| Solver | cuOpt GPU with PDLP |
+| Rebalancing | None unless requested |
 
-## Guidelines
+The default S&P 500 file is a historical snapshot and can omit current constituents. User-supplied CSVs should be date-indexed price tables with ticker columns, compatible with `utils.get_input_data`. If requested tickers are absent, drop them, report the omissions, and continue with available columns unless the user explicitly asks you to fetch other data.
 
-- **SKILL.md is the primary reference.** It covers the typical workflow; consult the source module listed on each API bullet for anything it does not spell out (full signatures, optional kwargs, return shapes). Use this path before reimplementing behaviour.
-- **Always use cuOpt GPU solver** — never fall back to CPU solvers (CLARABEL, SCS, ECOS). Use `cp.CUOPT` or `api="cuopt_python"`.
-- **Always pass the canonical `SOLVER_SETTINGS`** (`{"solver": cp.CUOPT, "verbose": False, "solver_method": "PDLP"}`) to every solve call. Keep the `solver_method="PDLP"` entry.
-- **Efficient frontier:** call `cvar_utils.create_efficient_frontier(returns_dict, cvar_params, solver_settings=SOLVER_SETTINGS, ra_num=25)`. `results_df` carries both the metrics and a per-portfolio `weights` dict (plus `cash`), so for a weights-by-risk-aversion table just expand that column — e.g. `pd.DataFrame(results_df["weights"].tolist(), index=results_df.index)`. No separate solve loop is needed. (`evaluate_all_linear_combinations` is a weight-grid sweep without the optimizer — not a frontier replacement.)
-- All settings must be Pydantic objects (`ReturnsComputeSettings`, `ScenarioGenerationSettings`, `KDESettings`, `CvarParameters`). Do not pass plain dicts.
-- Import cuFOLIO modules from the installed `cufolio` package: e.g. `from cufolio import cvar_optimizer, cvar_utils, backtest, utils, rebalance, portfolio`, `from cufolio.settings import ReturnsComputeSettings, ScenarioGenerationSettings, KDESettings, ApiSettings`, `from cufolio.cvar_parameters import CvarParameters`.
-- For fixed-schedule rebalancing via `drift_from_optimal` with `threshold=0`, set `plot_title` to reflect the strategy (e.g. "Monthly Rebalancing") instead of the default.
+## Key APIs
+
+Use the package APIs instead of reimplementing portfolio math or simulation loops. cuFOLIO helpers return flat objects: `returns_dict` has keys such as `returns`, `mean`, `covariance`, and `tickers`; do not index it as `returns_dict["regime_1"]`. `solve_optimization_problem(...)` returns `(result_row, portfolio)`, not a nested result dictionary.
+
+- Returns: `utils.calculate_returns(input_dataset, regime_dict, returns_compute_settings)`.
+- Regime filter: `regime_dict` is `None` or `{"name": "...", "range": ("YYYY-MM-DD", "YYYY-MM-DD")}`; it is not keyed by regime name and does not contain tickers.
+- Scenarios: `cvar_utils.generate_cvar_data(returns_dict, scenario_generation_settings)`.
+- Optimizer: `cvar_optimizer.CVaR(returns_dict, cvar_params)`.
+- Solve: `result_row, portfolio = cvar_problem.solve_optimization_problem(solver_settings=SOLVER_SETTINGS, print_results=False)`.
+- Efficient frontier: `cvar_utils.create_efficient_frontier(returns_dict, cvar_params, solver_settings=SOLVER_SETTINGS, ra_num=25)`. The returned `results_df` includes metrics, a `weights` dict column, and `cash`.
+- Portfolio: `Portfolio(name="", tickers=None, weights=None, cash=0.0, time_range=None)`; pass tickers and a flat array-like `weights` aligned to those tickers.
+- Backtest: create `portfolio.Portfolio` objects for the optimized allocation and each benchmark; for an equal-weight benchmark, use weights of `1 / len(tickers)` and `cash=0.0`, then call `backtest.portfolio_backtester(test_portfolio, returns_dict, risk_free_rate=0.0, test_method="historical", benchmark_portfolios=[...]).backtest_against_benchmarks(...)`.
+- Rebalance: `rebalance.rebalance_portfolio(...)` requires `dataset_directory` to be a CSV path, not a DataFrame. Call `re_optimize(...)`; it returns `(results_dataframe, re_optimize_dates, cumulative_portfolio_value)`.
+- Settings models: `ReturnsComputeSettings`, `ScenarioGenerationSettings`, `KDESettings`, `ApiSettings`, and `CvarParameters`.
 
 ## Examples
 
-- *"Build the optimal portfolio from the S&P 500."* → load data, compute LOG returns, generate KDE scenarios on GPU, `CvarParameters(w_min=0.0, w_max=1.0, c_max=0.0, confidence=0.95)`, solve with the cuOpt `SOLVER_SETTINGS`; report the diversified allocation, expected return, and CVaR.
-- *"Plot the efficient frontier."* → `cvar_utils.create_efficient_frontier(..., ra_num=25)`; present `(results_df, fig)`.
-- *"Give me a weights-by-risk-aversion table."* → `create_efficient_frontier(...)`, then expand `results_df["weights"]` into a per-asset table (`pd.DataFrame(results_df["weights"].tolist())`).
-- *"Backtest the optimal portfolio against benchmarks."* → build `Portfolio` objects (the optimal + an equal-weight benchmark), then `backtest.portfolio_backtester(optimal, returns_dict, test_method="historical", benchmark_portfolios=[equal_weight]).backtest_against_benchmarks()`; report Sharpe / Sortino / max drawdown. Don't write your own loop.
-- *"Backtest a monthly rebalancing strategy."* → `rebalance.rebalance_portfolio(..., re_optimize_criteria={"type": "drift_from_optimal", "threshold": 0, "norm": 1})` then `re_optimize(transaction_cost_factor=...)`.
+- "Build the optimal portfolio from the S&P 500": load prices, compute LOG returns, generate GPU KDE scenarios, set long-only fully invested `CvarParameters`, solve with cuOpt, and report diversified weights plus return/CVaR.
+- "Plot the efficient frontier": call `create_efficient_frontier(...)`, return `results_df`, and show or save the figure as requested.
+- "Give me weights by risk aversion": expand `results_df["weights"]` into a per-asset table.
+- "Backtest against equal weight": build the optimized and equal-weight `Portfolio` objects, then use the cuFOLIO backtester and report Sharpe, Sortino, and max drawdown.
+- "Backtest monthly rebalancing": configure `rebalance_portfolio` with the drift trigger above and run `re_optimize(transaction_cost_factor=...)`.
 
 ## Limitations
 
-- Requires an NVIDIA GPU with cuOpt + cuML; there is no CPU fallback (CPU solvers are intentionally disallowed — see Solver).
-- The default S&P 500 dataset is a historical snapshot and may omit current constituents; unavailable tickers are dropped (see Data).
+- Requires an NVIDIA GPU with cuOpt and cuML; CPU solvers are intentionally disallowed.
+- CPU-only eval containers can still validate routing, data handling, and reporting behavior, but they cannot produce a valid cuOpt solve. In that case, report the missing GPU/cuOpt runtime explicitly.
+- Default price data is a historical snapshot and may omit current constituents.
+- First-run dataset download depends on network access unless the user supplies a CSV.
+
+## Troubleshooting
+
+- Missing default CSV or `FileNotFoundError`: explain that cuFOLIO will fetch public market data with `download_data("data/stock_data", datasets=["sp500"])`; run it only after user confirmation.
+- `SolverError` or missing `cp.CUOPT`: install the CUDA extra matching the host and verify with `python -c "import cvxpy as cp; print(hasattr(cp, 'CUOPT'), cp.installed_solvers())"`.
+- `ImportError` for `cuml` or GPU KDE failures: confirm cuML is present with `python -c "import cuml"` and keep `KDESettings(device="GPU")`.
+- Ordinary optimization returns all cash: set `c_max=0.0` in `CvarParameters`.
+- Solver reports infeasible or no solution: check for contradictory bounds, too few tickers for the requested caps/cardinality, or a date filter that leaves too little data; report the smallest constraint change that would make the request feasible.
+- Requested tickers are absent from the default CSV: report them and proceed with the remaining requested tickers.
+- User CSV fails validation: ask for a date-indexed price table or a CSV whose first column is dates and remaining columns are numeric ticker prices; mention the minimum 60-row post-filter requirement.

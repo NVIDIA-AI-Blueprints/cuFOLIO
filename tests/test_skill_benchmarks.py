@@ -4,7 +4,7 @@
 """Layer 3: cufolio skill performance benchmarks (GPU-gated regression suite).
 
 Runs the documented SKILL.md workflows end-to-end with NVIDIA cuOpt and asserts
-each meets the standards in ``skills/cufolio/evals/thresholds.toml``. The whole
+each meets the standards in ``skills/cufolio/references/benchmarks/thresholds.toml``. The whole
 module auto-skips when the cuOpt/cuML GPU runtime is unavailable, so it is
 harmless on developer laptops and the no-GPU CI lane.
 
@@ -22,10 +22,14 @@ pytestmark = pytest.mark.gpu
 pytest.importorskip("cuopt", reason="cuOpt GPU runtime required for skill benchmarks")
 pytest.importorskip("cuml", reason="cuML GPU runtime required for skill benchmarks")
 
-_EVALS_DIR = (
-    pathlib.Path(__file__).resolve().parents[1] / "skills" / "cufolio" / "evals"
+_BENCHMARKS_DIR = (
+    pathlib.Path(__file__).resolve().parents[1]
+    / "skills"
+    / "cufolio"
+    / "references"
+    / "benchmarks"
 )
-sys.path.insert(0, str(_EVALS_DIR))
+sys.path.insert(0, str(_BENCHMARKS_DIR))
 
 import benchmark_workflows as bw  # noqa: E402
 

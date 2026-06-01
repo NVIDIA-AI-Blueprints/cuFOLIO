@@ -5,8 +5,8 @@
   "author": {
     "name": "NVIDIA"
   },
-  "homepage": "https://github.com/NVIDIA-AI-Blueprints/quantitative-portfolio-optimization",
-  "repository": "https://github.com/NVIDIA-AI-Blueprints/quantitative-portfolio-optimization",
+  "homepage": "https://github.com/NVIDIA-AI-Blueprints/cuFOLIO",
+  "repository": "https://github.com/NVIDIA-AI-Blueprints/cuFOLIO",
   "license": "Apache-2.0",
   "skills": "skills",
   "keywords": [

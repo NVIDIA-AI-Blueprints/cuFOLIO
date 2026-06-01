@@ -16,20 +16,21 @@ grades a workflow's metrics against ``thresholds.toml`` (the explicit "standards
 
 Run as a script for a report::
 
-    python skills/cufolio/evals/benchmark_workflows.py            # fast, small universe
-    python skills/cufolio/evals/benchmark_workflows.py --full     # full S&P 500
-    python skills/cufolio/evals/benchmark_workflows.py --check    # also print PASS/FAIL
+    python skills/cufolio/references/benchmarks/benchmark_workflows.py            # fast, small universe
+    python skills/cufolio/references/benchmarks/benchmark_workflows.py --full     # full S&P 500
+    python skills/cufolio/references/benchmarks/benchmark_workflows.py --check    # also print PASS/FAIL
 
 or as a pytest gate (auto-skips off-GPU): ``uv run pytest -m gpu``.
 
 Requires the ``cufolio`` package with NVIDIA cuOpt + cuML installed (e.g. the Brev
 launchable or ``uv sync --extra cuda12``), and network access on first run to
-download price data.
+download price data. The CLI exits cleanly with a SKIP message when the GPU runtime is absent.
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import os
 import tempfile
 import time
@@ -66,11 +67,28 @@ class DataUnavailable(RuntimeError):
     """Raised when price data cannot be located or downloaded (test -> skip)."""
 
 
+def gpu_runtime_available() -> tuple[bool, str]:
+    """Return whether the cuOpt/cuML GPU benchmark runtime is importable."""
+    missing = []
+    for module_name in ("cuopt", "cuml"):
+        try:
+            spec = importlib.util.find_spec(module_name)
+        except (ImportError, ValueError):
+            spec = None
+        if spec is None:
+            missing.append(module_name)
+    if not hasattr(cp, "CUOPT"):
+        missing.append("cvxpy.CUOPT")
+    if missing:
+        return False, "missing " + ", ".join(missing)
+    return True, ""
+
+
 # --------------------------------------------------------------------------- #
 # Data
 # --------------------------------------------------------------------------- #
 def resolve_csv_path(csv_path: str | None = None, allow_download: bool = True) -> str:
-    """Locate a price CSV, downloading a small dataset (dow30) if needed."""
+    """Locate a price CSV, downloading the default S&P 500 dataset if needed."""
     candidates = [
         csv_path,
         os.path.join("data", "stock_data", "sp500.csv"),
@@ -82,12 +100,12 @@ def resolve_csv_path(csv_path: str | None = None, allow_download: bool = True) -
     if allow_download:
         target = os.path.join(_REPO_ROOT, "data", "stock_data")
         try:
-            utils.download_data(target, datasets=["dow30"])
+            utils.download_data(target, datasets=["sp500"])
         except Exception as exc:  # network / yfinance failure
             raise DataUnavailable(f"could not download price data: {exc}") from exc
-        dow = os.path.join(target, "dow30.csv")
-        if os.path.exists(dow):
-            return dow
+        sp500 = os.path.join(target, "sp500.csv")
+        if os.path.exists(sp500):
+            return sp500
     raise DataUnavailable(
         "no price CSV found; pass --csv or run "
         "cufolio.utils.download_data('data/stock_data', datasets=['sp500']) first"
@@ -433,6 +451,11 @@ def main() -> int:
     parser.add_argument("--csv", default=None, help="path to a price CSV")
     parser.add_argument("--check", action="store_true", help="grade vs thresholds.toml")
     args = parser.parse_args()
+
+    gpu_ok, reason = gpu_runtime_available()
+    if not gpu_ok:
+        print(f"SKIP cuFOLIO GPU benchmark workflows: {reason}")
+        return 0
 
     results = run_all(full=args.full, csv_path=args.csv)
     print(_format_report(results))

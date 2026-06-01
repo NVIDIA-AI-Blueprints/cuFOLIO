@@ -1,0 +1,865 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.  # noqa
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import time
+from typing import Optional
+
+import cvxpy as cp
+import numpy as np
+import pandas as pd
+
+from . import base_optimizer, cvar_utils
+from .cvar_parameters import CvarParameters
+from .portfolio import Portfolio
+from .settings import ApiSettings
+
+"""
+Module: CVaR Optimization
+=========================
+This module implements data structures and a class for Conditional
+Value‑at‑Risk (CVaR) portfolio optimization.
+A CVaR optimizer chooses asset weights that control downside risk while
+maximizing expected return (or, equivalently, minimizing a
+risk‑penalised loss).
+
+Key features
+------------
+* Set up problem using different interfaces (CVXPY with bounds/parameters, cuOpt).
+* Build models with customizable constraints based on CvarParameter.
+* Print optimization results with detailed performance metrics and allocation.
+
+Public classes
+--------------
+``CVaR``
+    Main CVaR portfolio optimizer class that supports multiple solver interfaces
+    (CVXPY and cuOpt). Handles Mean-CVaR optimization with customizable constraints
+    including weight bounds, cash allocation, leverage limits, CVaR hard limits,
+    turnover restrictions, and cardinality constraints.
+
+Usage Examples
+--------------
+Standard CVXPY solver (uses bounds by default):
+    >>> optimizer = CVaR(returns_dict, cvar_params)
+    >>> result, portfolio = optimizer.solve_optimization_problem(
+    ...     {"solver": cp.CLARABEL}
+    ... )
+
+cuOpt GPU solver:
+    >>> api_settings = {"api": "cuopt_python"}
+    >>> optimizer = CVaR(returns_dict, cvar_params, api_settings=api_settings)
+    >>> result, portfolio = optimizer.solve_optimization_problem({
+    ...     "time_limit": 60
+    ... })
+
+CVXPY with parameters:
+    >>> api_settings = {
+    ...     "api": "cvxpy",
+    ...     "weight_constraints_type": "parameter",
+    ...     "cash_constraints_type": "parameter"
+    ... }
+    >>> optimizer = CVaR(returns_dict, cvar_params, api_settings=api_settings)
+    >>> result, portfolio = optimizer.solve_optimization_problem(
+    ...     {"solver": cp.CLARABEL}
+    ... )
+
+CVXPY with pickle save enabled:
+    >>> api_settings = {
+    ...     "api": "cvxpy",
+    ...     "pickle_save_path": "cvar_problems/sp500_num-scen10000_problem.pkl"
+    ... }
+    >>> optimizer = CVaR(returns_dict, cvar_params, api_settings=api_settings)
+    >>> result, portfolio = optimizer.solve_optimization_problem(
+    ...     {"solver": cp.CLARABEL}
+    ... )
+    # Problem automatically saved during setup to:
+    # cvar_problems/sp500_num-scen10000_problem.pkl
+"""
+
+
+class CVaR(base_optimizer.BaseOptimizer):
+    """
+    CVaR portfolio optimizer with multiple API support.
+    Solves Mean-CVaR optimization problems with the following constraints:
+        - Weight bounds
+        - Cash bounds
+        - Leverage constraint
+        - Hard CVaR limit (optional)
+        - Turnover constraint (optional)
+        - Cardinality constraint (optional)
+
+    Key features:
+    - Risk-adjusted return optimization
+    - Supports both CVXPY and cuOpt Python APIs
+    - GPU acceleration available via cuOpt
+    - Performance monitoring with timing metrics
+    - Automatic setup based on API choice
+    """
+
+    def __init__(
+        self,
+        returns_dict: dict,
+        cvar_params: CvarParameters,
+        api_settings: Optional[ApiSettings] = None,
+        existing_portfolio: Optional[Portfolio] = None,
+    ):
+        """Initialize CVaR optimizer with data and constraints.
+
+        Parameters
+        ----------
+        returns_dict : dict
+            Input data containing regime info and CvarData instance.
+        cvar_params : CvarParameters
+            Constraint parameters and optimization settings (deep-copied).
+        api_settings : ApiSettings, optional
+            API configuration including solver choice and constraint types.
+            Uses CVXPY with bounds if not provided.
+        existing_portfolio : Portfolio, optional
+            An existing portfolio to measure the turnover from.
+        """
+        super().__init__(
+            returns_dict, cvar_params, api_settings, existing_portfolio, "CVaR"
+        )
+
+        self.data = returns_dict["cvar_data"]
+
+        self._result_columns = [
+            "regime",
+            "solver",
+            "solve time",
+            "return",
+            "CVaR",
+            "obj",
+        ]
+
+        self._setup_optimization_problem()
+
+    def _scale_risk_aversion(self):
+        """
+        heuristically scale risk aversion parameter by the ratio of
+        the maximum of the return over CVaR for single-asset portfolios.
+        """
+        single_portfolio_performance = cvar_utils.evaluate_single_asset_portfolios(self)
+        self._risk_aversion_scalar = (
+            single_portfolio_performance["return"]
+            / single_portfolio_performance["CVaR"]
+        ).max()
+
+        self.params.update_risk_aversion(
+            self.params.risk_aversion * self._risk_aversion_scalar
+        )
+
+    def _setup_cvxpy_problem(self):
+        """
+        Build the cvar optimization problem using natural math languages in the
+        cvxpy format
+
+        Supports the following types of problems:
+            1. (LP) 'basic cvar': basic mean-cvar problem
+                Minimize: lambda_risk(t + 1/(1- confidence) p^T u) - mu^T w
+                Subject to: u + t >= - R^T w,
+                            u >= 0,
+                            sum{w} + c = 1,
+                            w_min_i <= w_i <= w_max_i,
+                            c_min <= c <= c_max,
+                            ||w||_1 <= L_tar.
+
+            2. (LP) 'cvar with limit': hard limit on CVaR
+                Maximize: mu^T w
+                Subject to: t + 1/(1- confidence) p^T u <= cvar_limit
+                            u + t >= - R^T w,
+                            u >= 0,
+                            sum{w} + c = 1,
+                            w_min_i <= w_i <= w_max_i,
+                            c_min <= c <= c_max,
+                            ||w||_1 <= L_tar.
+
+            3. (LP) 'cvar with turnover': basic mean-cvar problem with an
+               additional constraint on turnover (weights changed from an
+               existing portfolio)
+                Minimize: lambda_risk(t + 1/(1- confidence) p^T u) - mu^T w
+                Subject to: u + t >= - R^T w,
+                            u >= 0,
+                            sum{w} + c = 1,
+                            w_min_i <= w_i <= w_max_i,
+                            c_min <= c <= c_max,
+                            ||w||_1 <= L_tar,
+                            ||w - existing_portfolio||_1 <= T_tar.
+
+            4. (LP) 'cvar with limit and turnover':
+                Maximize: mu^T w
+                Subject to: t + 1/(1- confidence) p^T u <= cvar_limit
+                            u + t >= - R^T w,
+                            u >= 0,
+                            sum{w} + c = 1,
+                            w_min_i <= w_i <= w_max_i,
+                            c_min <= c <= c_max,
+                            ||w||_1 <= L_tar,
+                            ||w - existing_ptf||_1 <= T_tar.
+
+            5. (MILP) 'cvar with cardinality': basic mean-cvar problem with an
+               additional constraint on the number of assets to be selected
+                Minimize: lambda_risk(t + 1/(1- confidence) p^T u) - mu^T w
+                Subject to: u + t >= - R^T w,
+                            u >= 0,
+                            sum{w} + c = 1,
+                            w_min_i * y_i <= w_i <= w_max_i * y_i,
+                            c_min <= c <= c_max,
+                            ||w||_1 <= L_tar
+                            sum{y_i} <= cardinality.
+                Note: y_i is a binary variable that indicates whether the
+                      i-th asset is selected.
+
+        We can also combine the above constraints to form a more complex problem.
+        """
+
+        num_assets = self.n_assets
+        num_scen = len(self.data.p)
+
+        # Create variables based on constraint type settings
+        if self.api_settings.weight_constraints_type == "bounds":
+            # Use variable bounds for weight constraints
+            self.w = cp.Variable(
+                num_assets,
+                name="weights",
+                bounds=[self.params.w_min, self.params.w_max],
+            )
+        else:
+            # Use parameters for weight constraints (default)
+            self.w = cp.Variable(num_assets, name="weights")
+            self.w_min_param = cp.Parameter(num_assets, name="w_min")
+            self.w_max_param = cp.Parameter(num_assets, name="w_max")
+
+        if self.api_settings.cash_constraints_type == "bounds":
+            # Use variable bounds for cash constraints
+            self.c = cp.Variable(
+                1, name="cash", bounds=[self.params.c_min, self.params.c_max]
+            )
+        else:
+            # Use parameters for cash constraints (default)
+            self.c = cp.Variable(1, name="cash")
+            self.c_min_param = cp.Parameter(name="c_min")
+            self.c_max_param = cp.Parameter(name="c_max")
+
+        # Create other auxiliary variables
+        u = cp.Variable(num_scen, nonneg=True)
+        t = cp.Variable(1)
+
+        # Create parameters for optimization parameters (always parameters)
+        self.risk_aversion_param = cp.Parameter(nonneg=True, name="risk_aversion")
+        self.L_tar_param = cp.Parameter(nonneg=True, name="L_tar")
+        self.T_tar_param = cp.Parameter(nonneg=True, name="T_tar")
+        self.cvar_limit_param = cp.Parameter(nonneg=True, name="cvar_limit")
+        self.cardinality_param = cp.Parameter(name="cardinality")
+
+        # set up expressions used in the optimization process
+        self.expected_ptf_returns = self.data.mean.T @ self.w
+        self.cvar_risk = t + 1 / (1 - self.params.confidence) * self.data.p @ u
+        scenario_ptf_returns = self.data.R.T @ self.w
+
+        # Add variable bounds constraints (only if using parameter constraints)
+        constraints = []
+        if self.api_settings.weight_constraints_type == "parameter":
+            constraints.extend(
+                [
+                    self.w_min_param <= self.w,
+                    self.w <= self.w_max_param,
+                ]
+            )
+        if self.api_settings.cash_constraints_type == "parameter":
+            constraints.extend(
+                [
+                    self.c_min_param <= self.c,
+                    self.c <= self.c_max_param,
+                ]
+            )
+
+        # set up the common constraints shared across all problem types
+        if self.params.cardinality is not None:
+            self._problem_type = "MILP"
+            print(f"{'=' * 50}")
+            print("MIXED-INTEGER LINEAR PROGRAMMING (MILP) SETUP")
+            print(f"{'=' * 50}")
+            print(f"Cardinality Constraint: K ≤ {self.params.cardinality} assets")
+            print(f"{'=' * 50}")
+            y = cp.Variable(num_assets, boolean=True, name="cardinality")
+
+            # Handle cardinality constraints based on weight constraint type
+            if self.api_settings.weight_constraints_type == "parameter":
+                constraints.extend(
+                    [
+                        cp.multiply(self.w_min_param, y) <= self.w,
+                        self.w <= cp.multiply(self.w_max_param, y),
+                    ]
+                )
+            else:
+                # For bounds-based constraints, we need to add explicit
+                # cardinality constraints
+                constraints.extend(
+                    [
+                        cp.multiply(self.params.w_min, y) <= self.w,
+                        self.w <= cp.multiply(self.params.w_max, y),
+                    ]
+                )
+
+            constraints.extend(
+                [
+                    cp.sum(self.w) + self.c == 1,
+                    u + t + scenario_ptf_returns >= 0,
+                    cp.norm1(self.w) <= self.L_tar_param,
+                    cp.sum(y) <= self.cardinality_param,
+                ]
+            )
+        else:
+            constraints.extend(
+                [
+                    u + t + scenario_ptf_returns >= 0,
+                    cp.sum(self.w) + self.c == 1,
+                    cp.norm1(self.w) <= self.L_tar_param,
+                ]
+            )
+
+        # set up objective
+        if self.params.cvar_limit is None:
+            obj = cp.Minimize(
+                self.risk_aversion_param * self.cvar_risk - self.expected_ptf_returns
+            )
+        else:
+            obj = cp.Maximize(self.expected_ptf_returns)
+            constraints.append(self.cvar_risk <= self.cvar_limit_param)
+
+        # set up turnover constraint
+        if self.existing_portfolio is not None and self.params.T_tar is not None:
+            w_prev = np.array(self.existing_portfolio.weights)
+            z = self.w - w_prev
+            constraints.append(cp.norm(z, 1) <= self.T_tar_param)
+
+        # set up group constraints
+        if self.params.group_constraints is not None:
+            for group_constraint in self.params.group_constraints:
+                tickers_index = [
+                    self.tickers.index(ticker) for ticker in group_constraint["tickers"]
+                ]
+                constraints.append(
+                    cp.sum(self.w[tickers_index])
+                    <= group_constraint["weight_bounds"]["w_max"]
+                )
+                constraints.append(
+                    cp.sum(self.w[tickers_index])
+                    >= group_constraint["weight_bounds"]["w_min"]
+                )
+
+        # store the optimization problem
+        self.optimization_problem = cp.Problem(obj, constraints)
+
+    def _assign_subclass_cvxpy_params(self):
+        if self.params.cvar_limit is not None:
+            self.cvar_limit_param.value = self.params.cvar_limit
+
+    def _get_cvxpy_risk_metric_value(self):
+        return self.cvar_risk.value[0]
+
+    def _setup_cuopt_problem(self):
+        """
+        Set up CVaR optimization problem using cuOpt Python API.
+
+        Creates cuOpt Problem instance with variables, constraints, and objective
+        for CVaR portfolio optimization. Note that cuOpt does not support
+        vectorized variables, so all variables and constraints are set up using loops.
+
+        Currently supports:
+        - Weight bounds and cash constraints
+        - Leverage constraints
+        - Turnover constraints
+        - CVaR hard limits
+        - Cardinality constraints
+        - Group constraints
+
+        Returns
+        -------
+        problem : cuopt.linear_programming.problem.Problem
+            cuOpt problem instance ready to solve
+        variables : dict
+            Dictionary containing problem variables for result extraction
+        timing_dict : dict
+            Timing information for each setup loop in seconds
+        """
+        # Lazy import
+        from cuopt.linear_programming.problem import (
+            CONTINUOUS,
+            INTEGER,
+            MAXIMIZE,
+            MINIMIZE,
+            LinearExpression,
+            Problem,
+        )
+
+        num_assets = self.n_assets
+        num_scen = len(self.data.p)
+
+        # Initialize timing dictionary
+        timing_dict = {}
+
+        # Create a new cuOpt problem
+        start_time = time.time()
+        problem = Problem("CVaR Portfolio Optimization")
+        timing_dict["problem_creation"] = time.time() - start_time
+
+        # Initialize variable storage
+        variables = {}
+
+        # Add portfolio weight variables (continuous)
+        start_time = time.time()
+        variables["w"] = []
+        for i in range(num_assets):
+            w_var = problem.addVariable(
+                lb=float(self.params.w_min[i]),
+                ub=float(self.params.w_max[i]),
+                vtype=CONTINUOUS,
+                name=f"w_{i}",
+            )
+            variables["w"].append(w_var)
+        timing_dict["weight_variables"] = time.time() - start_time
+
+        # Add cash variable
+        start_time = time.time()
+        variables["c"] = problem.addVariable(
+            lb=float(self.params.c_min),
+            ub=float(self.params.c_max),
+            vtype=CONTINUOUS,
+            name="cash",
+        )
+        timing_dict["cash_variable"] = time.time() - start_time
+
+        # Add auxiliary variables for CVaR calculation
+        start_time = time.time()
+        variables["u"] = []
+        for j in range(num_scen):
+            u_var = problem.addVariable(lb=0.0, vtype=CONTINUOUS, name=f"u_{j}")
+            variables["u"].append(u_var)
+        timing_dict["auxiliary_variables"] = time.time() - start_time
+
+        # Add CVaR threshold variable
+        start_time = time.time()
+        variables["t"] = problem.addVariable(vtype=CONTINUOUS, name="t")
+        timing_dict["threshold_variable"] = time.time() - start_time
+
+        # Add budget constraint: sum(w) + c = 1
+        start_time = time.time()
+        # Use LinearExpression to avoid recursion: sum(w) + c = 1
+        budget_vars = variables["w"] + [variables["c"]]
+        budget_coeffs = [1.0] * num_assets + [1.0]
+        budget_expr = LinearExpression(budget_vars, budget_coeffs, 0.0)
+        problem.addConstraint(budget_expr == 1.0, name="budget_constraint")
+        timing_dict["budget_constraint"] = time.time() - start_time
+
+        # Add CVaR scenario constraints: u[j] + t >= -sum(R[i,j] * w[i])
+        # Rewritten as: t + u[j] + sum(R[i,j] * w[i]) >= 0
+        start_time = time.time()
+        for j in range(num_scen):
+            # Build constraint using LinearExpression
+            scenario_vars = [variables["t"], variables["u"][j]] + variables["w"]
+            scenario_coeffs = [1.0, 1.0] + [
+                float(self.data.R[i, j]) for i in range(num_assets)
+            ]
+            scenario_expr = LinearExpression(scenario_vars, scenario_coeffs, 0.0)
+            problem.addConstraint(scenario_expr >= 0.0, name=f"cvar_scenario_{j}")
+        timing_dict["cvar_constraints"] = time.time() - start_time
+
+        # Add leverage constraint: sum(|w[i]|) <= L_tar
+        # For cuOpt, we need to add separate variables for positive and negative parts
+        if self.params.L_tar < float("inf"):
+            start_time = time.time()
+            variables["w_pos"] = []
+            variables["w_neg"] = []
+
+            # First, add all auxiliary variables
+            for i in range(num_assets):
+                w_pos = problem.addVariable(lb=0.0, vtype=CONTINUOUS, name=f"w_pos_{i}")
+                w_neg = problem.addVariable(lb=0.0, vtype=CONTINUOUS, name=f"w_neg_{i}")
+                variables["w_pos"].append(w_pos)
+                variables["w_neg"].append(w_neg)
+
+            # Then, add decomposition constraints: w[i] = w_pos[i] - w_neg[i]
+            for i in range(num_assets):
+                decomp_vars = [
+                    variables["w"][i],
+                    variables["w_pos"][i],
+                    variables["w_neg"][i],
+                ]
+                decomp_coeffs = [1.0, -1.0, 1.0]  # w - w_pos + w_neg = 0
+                decomp_expr = LinearExpression(decomp_vars, decomp_coeffs, 0.0)
+                problem.addConstraint(
+                    decomp_expr == 0.0, name=f"weight_decomposition_{i}"
+                )
+
+            # Leverage constraint: sum(w_pos + w_neg) <= L_tar
+            leverage_vars = variables["w_pos"] + variables["w_neg"]
+            leverage_coeffs = [1.0] * (2 * num_assets)
+            leverage_expr = LinearExpression(leverage_vars, leverage_coeffs, 0.0)
+            problem.addConstraint(
+                leverage_expr <= self.params.L_tar, name="leverage_constraint"
+            )
+            timing_dict["leverage_constraints"] = time.time() - start_time
+        else:
+            timing_dict["leverage_constraints"] = 0.0
+
+        # Add cardinality constraints (requires integer variables)
+        if self.params.cardinality is not None:
+            start_time = time.time()
+            variables["y"] = []
+
+            # Add binary/integer variables for asset selection (constrained to 0-1)
+            for i in range(num_assets):
+                y_var = problem.addVariable(lb=0, ub=1, vtype=INTEGER, name=f"y_{i}")
+                variables["y"].append(y_var)
+
+            # Add cardinality constraint: sum(y_i) <= cardinality
+            cardinality_coeffs = [1.0] * num_assets
+            cardinality_expr = LinearExpression(variables["y"], cardinality_coeffs, 0.0)
+            problem.addConstraint(
+                cardinality_expr <= self.params.cardinality,
+                name="cardinality_constraint",
+            )
+
+            # Add wegiht constraints: w_min_i * y_i <= w_i <= w_max_i * y_i
+            for i in range(num_assets):
+                # Lower bound: w[i] - w_min[i] * y[i] >= 0
+                lower_vars = [variables["w"][i], variables["y"][i]]
+                lower_coeffs = [1.0, -float(self.params.w_min[i])]
+                lower_expr = LinearExpression(lower_vars, lower_coeffs, 0.0)
+                problem.addConstraint(lower_expr >= 0.0, name=f"cardinality_lower_{i}")
+
+                # Upper bound: w[i] - w_max[i] * y[i] <= 0
+                upper_vars = [variables["w"][i], variables["y"][i]]
+                upper_coeffs = [1.0, -float(self.params.w_max[i])]
+                upper_expr = LinearExpression(upper_vars, upper_coeffs, 0.0)
+                problem.addConstraint(upper_expr <= 0.0, name=f"cardinality_upper_{i}")
+
+            timing_dict["cardinality_constraints"] = time.time() - start_time
+            print(
+                f"Cardinality Constraint: K ≤ {self.params.cardinality} assets (MILP)"
+            )
+        else:
+            timing_dict["cardinality_constraints"] = 0.0
+
+        # Add turnover constraint if existing portfolio is provided
+        if self.existing_portfolio is not None and self.params.T_tar is not None:
+            start_time = time.time()
+            w_prev = np.array(self.existing_portfolio.weights)
+            variables["turnover_pos"] = []
+            variables["turnover_neg"] = []
+
+            # First, add all auxiliary variables
+            for i in range(num_assets):
+                to_pos = problem.addVariable(
+                    lb=0.0, vtype=CONTINUOUS, name=f"turnover_pos_{i}"
+                )
+                to_neg = problem.addVariable(
+                    lb=0.0, vtype=CONTINUOUS, name=f"turnover_neg_{i}"
+                )
+                variables["turnover_pos"].append(to_pos)
+                variables["turnover_neg"].append(to_neg)
+
+            # Decomposition constraints: w[i] - w_prev[i] = to_pos[i] - to_neg[i]
+            # Rewritten: w[i] - to_pos[i] + to_neg[i] = w_prev[i]
+            for i in range(num_assets):
+                decomp_vars = [
+                    variables["w"][i],
+                    variables["turnover_pos"][i],
+                    variables["turnover_neg"][i],
+                ]
+                decomp_coeffs = [1.0, -1.0, 1.0]
+                decomp_expr = LinearExpression(decomp_vars, decomp_coeffs, 0.0)
+                problem.addConstraint(
+                    decomp_expr == float(w_prev[i]), name=f"turnover_decomposition_{i}"
+                )
+
+            # Turnover constraint: sum(to_pos + to_neg) <= T_tar
+            turnover_vars = variables["turnover_pos"] + variables["turnover_neg"]
+            turnover_coeffs = [1.0] * (2 * num_assets)
+            turnover_expr = LinearExpression(turnover_vars, turnover_coeffs, 0.0)
+            problem.addConstraint(
+                turnover_expr <= self.params.T_tar, name="turnover_constraint"
+            )
+            timing_dict["turnover_constraints"] = time.time() - start_time
+        else:
+            timing_dict["turnover_constraints"] = 0.0
+
+        # Add group constraints
+        if self.params.group_constraints is not None:
+            start_time = time.time()
+            for group_idx, group_constraint in enumerate(self.params.group_constraints):
+                # Get indices for tickers in this group
+                tickers_index = [
+                    self.tickers.index(ticker) for ticker in group_constraint["tickers"]
+                ]
+
+                # Build sum expression using LinearExpression
+                if len(tickers_index) > 0:
+                    group_vars = [variables["w"][i] for i in tickers_index]
+                    group_coeffs = [1.0] * len(tickers_index)
+                    group_sum_expr = LinearExpression(group_vars, group_coeffs, 0.0)
+
+                    # Add upper and lower bound constraints for the group
+                    problem.addConstraint(
+                        group_sum_expr <= group_constraint["weight_bounds"]["w_max"],
+                        name=f"group_{group_idx}_upper",
+                    )
+                    problem.addConstraint(
+                        group_sum_expr >= group_constraint["weight_bounds"]["w_min"],
+                        name=f"group_{group_idx}_lower",
+                    )
+
+            timing_dict["group_constraints"] = time.time() - start_time
+            print(f"Group Constraints: {len(self.params.group_constraints)} groups")
+        else:
+            timing_dict["group_constraints"] = 0.0
+
+        # Set up objective function
+        start_time = time.time()
+
+        # Build expected return expression using LinearExpression
+        expected_return_coeffs = [float(self.data.mean[i]) for i in range(num_assets)]
+        expected_return_expr = LinearExpression(
+            variables["w"], expected_return_coeffs, 0.0
+        )
+
+        # Build CVaR expression using LinearExpression
+        # CVaR = t + sum(p[j] / (1 - alpha)) * u[j]
+        cvar_vars = [variables["t"]] + variables["u"]
+        cvar_coeffs = [1.0] + [
+            float(self.data.p[j] / (1 - self.params.confidence))
+            for j in range(num_scen)
+        ]
+        cvar_expr = LinearExpression(cvar_vars, cvar_coeffs, 0.0)
+
+        if self.params.cvar_limit is None:
+            # Minimize: risk_aversion * CVaR - expected_return
+            # Combine into single LinearExpression: risk_aversion * cvar_coeffs - expected_return_coeffs
+            obj_vars = [variables["t"]] + variables["u"] + variables["w"]
+            obj_coeffs = (
+                [float(self.params.risk_aversion)]  # t coefficient
+                + [
+                    float(self.params.risk_aversion)
+                    * float(self.data.p[j] / (1 - self.params.confidence))
+                    for j in range(num_scen)
+                ]  # u coefficients
+                + [
+                    -float(self.data.mean[i]) for i in range(num_assets)
+                ]  # w coefficients (negative for return)
+            )
+            objective_expr = LinearExpression(obj_vars, obj_coeffs, 0.0)
+            problem.setObjective(objective_expr, sense=MINIMIZE)
+        else:
+            # Maximize: expected_return subject to CVaR <= cvar_limit
+            problem.setObjective(expected_return_expr, sense=MAXIMIZE)
+            problem.addConstraint(
+                cvar_expr <= self.params.cvar_limit, name="cvar_limit_constraint"
+            )
+        timing_dict["objective_setup"] = time.time() - start_time
+
+        print(f"{'=' * 50}")
+        print("cuOpt PROBLEM SETUP COMPLETED")
+        print(f"{'=' * 50}")
+        print(
+            f"Variables: {num_assets} weights + 1 cash + {num_scen} auxiliary + "
+            f"1 threshold"
+        )
+        if self.params.cardinality is not None:
+            print(f"           + {num_assets} cardinality (integer)")
+        if self.params.L_tar < float("inf"):
+            print(f"           + {2 * num_assets} leverage decomposition")
+        if self.existing_portfolio is not None and self.params.T_tar is not None:
+            print(f"           + {2 * num_assets} turnover decomposition")
+        if self.params.group_constraints is not None:
+            print(
+                f"           + {len(self.params.group_constraints)} group constraints"
+            )
+        print(
+            f"Constraints: Budget + {num_scen} CVaR scenarios + additional constraints"
+        )
+        if self.params.cardinality is not None:
+            print("Problem Type: MILP (Mixed-Integer Linear Programming)")
+        else:
+            print("Problem Type: LP")
+        print(f"{'=' * 50}")
+
+        return problem, variables, timing_dict
+
+    def _solve_cuopt_problem(self, solver_settings: dict = None):
+        """
+        Solve CVaR optimization using cuOpt.
+
+        Parameters
+        ----------
+        solver_settings : dict, optional
+            cuOpt solver configuration. If None, uses default settings.
+            Example: {"time_limit": 60}
+
+        Returns
+        -------
+        result_row : pd.Series
+            Performance metrics: regime, solve_time, return, CVaR, objective
+        weights : np.ndarray
+            Optimal asset weights
+        cash : float
+            Optimal cash allocation
+        """
+        # Lazy import
+        from cuopt.linear_programming.solver_settings import SolverSettings
+
+        # Configure solver settings
+        settings = SolverSettings()
+        if solver_settings:
+            for param, value in solver_settings.items():
+                settings.set_parameter(param, value)
+
+        # Solve the problem
+        total_start = time.time()
+        self._cuopt_problem.solve(settings)
+        total_end = time.time()
+        total_time = total_end - total_start
+        solve_time = self._cuopt_problem.SolveTime
+        self.cuopt_api_overhead = total_time - solve_time
+
+        # Check solution status
+        if self._cuopt_problem.Status.name != "Optimal":
+            raise RuntimeError(
+                f"cuOpt failed to find optimal solution. Status: "
+                f"{self._cuopt_problem.Status.name}"
+            )
+
+        # Extract solution
+        weights = np.array([var.getValue() for var in self._cuopt_variables["w"]])
+        cash = self._cuopt_variables["c"].getValue()
+
+        # Calculate performance metrics
+        expected_return = np.dot(self.data.mean, weights)
+
+        # Calculate CVaR
+        t_value = self._cuopt_variables["t"].getValue()
+        u_values = np.array([var.getValue() for var in self._cuopt_variables["u"]])
+        cvar_value = t_value + np.dot(self.data.p, u_values) / (
+            1 - self.params.confidence
+        )
+
+        objective_value = self._cuopt_problem.ObjValue
+
+        result_row = pd.Series(
+            [
+                self.regime_name,
+                "cuOpt",
+                solve_time,
+                expected_return,
+                cvar_value,
+                objective_value,
+            ],
+            index=self._result_columns,
+        )
+
+        print(f"cuOpt solution found in {solve_time:.2f} seconds")
+        print(f"Status: {self._cuopt_problem.Status.name}")
+        print(f"Objective value: {objective_value:.6f}")
+
+        return result_row, weights, cash
+
+    def _print_results(
+        self,
+        result_row: pd.Series,
+        portfolio: Portfolio,
+        time_results: dict,
+        min_percentage: float = 1,
+    ):
+        """
+        Display CVaR optimization results and optimized portfolio allocation.
+
+        Parameters
+        ----------
+        result_row : pd.Series
+            optimization results
+        portfolio : <portfolio object>
+            portfolio to display the readable allocation
+        time_results : dict
+            Additional timing breakdown (e.g., data prep, post-processing).
+        min_percentage : float, default 1
+            Only assets with absolute allocation >= min_percentage%
+            will be shown.
+        """
+        solver_name = result_row["solver"]
+        solve_time = result_row["solve time"]
+        expected_return = result_row["return"]
+        cvar_value = result_row["CVaR"]
+        objective_value = result_row["obj"]
+
+        # Main header
+        print(f"\n{'=' * 60}")
+        print("CVaR OPTIMIZATION RESULTS")
+        print(f"{'=' * 60}")
+
+        # Problem configuration section
+        print("PROBLEM CONFIGURATION")
+        print(f"{'-' * 30}")
+        print(f"Solver:              {solver_name}")
+        print(f"Regime:              {self.regime_name}")
+        print(f"Time Period:         {self.regime_range[0]} to {self.regime_range[1]}")
+        print(f"Scenarios:           {len(self.data.p):,}")
+        print(f"Assets:              {self.n_assets}")
+        print(f"Confidence Level:    {self.params.confidence:.1%}")
+
+        if self.params.cardinality is not None:
+            print(f"Cardinality Limit:   {self.params.cardinality} assets")
+        if self.params.cvar_limit is not None:
+            print(f"CVaR Hard Limit:     {self.params.cvar_limit:.4f}")
+        if self.existing_portfolio is not None and self.params.T_tar is not None:
+            print(f"Turnover Constraint: {self.params.T_tar:.3f}")
+
+        # Performance metrics section
+        print("\nPERFORMANCE METRICS")
+        print(f"{'-' * 30}")
+        print(
+            f"Expected Return:     {expected_return:.6f} ({expected_return * 100:.4f}%)"
+        )
+        print(
+            f"CVaR ({self.params.confidence:.0%}):          {cvar_value:.6f} "
+            f"({cvar_value * 100:.4f}%)"
+        )
+        print(f"Objective Value:     {objective_value:.6f}")
+
+        # Timing section
+        print("\nSOLVING PERFORMANCE")
+        print(f"{'-' * 30}")
+        # Print setup time based on solver type
+        if hasattr(self, "set_up_time"):
+            print(f"Setup Time:          {self.set_up_time:.4f} seconds")
+        if hasattr(self, "cvxpy_api_overhead"):
+            print(f"CVXPY API Overhead:  {self.cvxpy_api_overhead:.4f} seconds")
+        if hasattr(self, "cuopt_api_overhead"):
+            print(f"cuOpt API Overhead:  {self.cuopt_api_overhead:.4f} seconds")
+        print(f"Solve Time:          {solve_time:.4f} seconds")
+
+        for key, value in time_results.items():
+            print(f"{key.title():20} {value:.4f} seconds")
+
+        # Portfolio allocation section
+        print("\nOPTIMAL PORTFOLIO ALLOCATION")
+        print(f"{'-' * 30}")
+        portfolio.print_clean(verbose=True, min_percentage=min_percentage)
+
+        print(f"{'=' * 60}\n")
+
+    def _get_cone_data_filename(self):
+        regime_name = getattr(self, "regime_name", "unknown")
+        num_scenarios = getattr(self.params, "num_scen", "unknown")
+        return f"cvar_{regime_name}_{num_scenarios}scen.pkl"
