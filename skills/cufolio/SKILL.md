@@ -54,7 +54,7 @@ This skill drives the installed `cufolio` package. A ready environment can come 
 
 In packaged agent/eval sandboxes, `cufolio` may be available through `PYTHONPATH` rather than as a separately published wheel. Verify the local package with `python -c "import cufolio"` before declaring it missing. Do not `pip install cufolio`, do not reimplement cuFOLIO workflows from scratch, and do not replace the package APIs with generic pandas/scipy/cvxpy portfolio code.
 
-For concrete implementation details, use `references/workflows/agent_recipes.py` as the source of truth. It contains exact working shapes for loading prices, preparing returns, solving with cuOpt, building a 25-point frontier, backtesting against equal weight, and calling the rebalancer.
+For concrete implementation details, use `references/workflows/agent_recipes.md` as the source of truth. It contains exact working shapes for loading prices, preparing returns, solving with cuOpt, building a 25-point frontier, backtesting against equal weight, and calling the rebalancer.
 
 The default dataset is `data/stock_data/sp500.csv`. It is gitignored. Before a first-run download, tell the user this fetches public market data through the cuFOLIO/yfinance data helper and ask them to confirm:
 
@@ -90,7 +90,7 @@ Briefly state the defaults being applied before execution, then use these guardr
 
 ## Canonical Workflow Skeleton
 
-Start positive cuFOLIO tasks from this shape and adapt only the requested output. For complete copyable functions, read `references/workflows/agent_recipes.py` before writing custom code.
+Start positive cuFOLIO tasks from this shape and adapt only the requested output. For complete copyable functions, read `references/workflows/agent_recipes.md` before writing custom code.
 
 ```python
 import cvxpy as cp

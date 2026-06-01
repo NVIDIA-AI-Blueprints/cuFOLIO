@@ -1,10 +1,13 @@
-"""Reference cuFOLIO workflows for agent tasks.
+# Reference cuFOLIO workflows for agent tasks
 
 These helpers are intentionally small and direct. They show the API shapes that
 agents should reuse when optimizing, tracing a frontier, backtesting, or running
-monthly rebalancing with cuFOLIO.
-"""
+monthly rebalancing with cuFOLIO. Copy the relevant function(s) and adapt only the
+requested output — do not reimplement the package.
 
+## Imports and dataset
+
+```python
 from __future__ import annotations
 
 from pathlib import Path
@@ -18,10 +21,12 @@ from cufolio.cvar_parameters import CvarParameters
 from cufolio.portfolio import Portfolio
 from cufolio.settings import KDESettings, ReturnsComputeSettings, ScenarioGenerationSettings
 
-
 DEFAULT_DATASET = "data/stock_data/sp500.csv"
+```
 
+## Solver settings — require cuOpt (never substitute a CPU solver)
 
+```python
 def require_cuopt_solver() -> dict:
     """Return solver settings for cuOpt or fail clearly if cuOpt is unavailable."""
     if not hasattr(cp, "CUOPT"):
@@ -38,8 +43,11 @@ def require_cuopt_solver() -> dict:
         )
 
     return {"solver": cp.CUOPT, "verbose": False, "solver_method": "PDLP"}
+```
 
+## CVaR parameters — fully invested (avoid the all-cash optimum)
 
+```python
 def fully_invested_params(
     *,
     w_min: float = 0.0,
@@ -56,8 +64,11 @@ def fully_invested_params(
         risk_aversion=risk_aversion,
         confidence=confidence,
     )
+```
 
+## Load and validate prices
 
+```python
 def load_prices(
     path: str = DEFAULT_DATASET,
     *,
@@ -91,8 +102,11 @@ def load_prices(
     if prices.shape[1] == 0:
         raise ValueError("No numeric ticker columns remain after validation.")
     return prices
+```
 
+## Prepare returns — LOG returns + GPU KDE scenarios
 
+```python
 def prepare_returns(prices: pd.DataFrame, *, num_scen: int = 10_000) -> dict:
     """Compute LOG returns and GPU KDE scenarios in the flat returns_dict shape."""
     returns_dict = utils.calculate_returns(
@@ -108,8 +122,11 @@ def prepare_returns(prices: pd.DataFrame, *, num_scen: int = 10_000) -> dict:
             kde_settings=KDESettings(device="GPU"),
         ),
     )
+```
 
+## Optimize one Mean-CVaR allocation
 
+```python
 def optimize_portfolio(
     prices: pd.DataFrame,
     *,
@@ -126,8 +143,11 @@ def optimize_portfolio(
         print_results=False,
     )
     return result_row, portfolio, returns_dict
+```
 
+## Efficient frontier with a per-asset weights table
 
+```python
 def efficient_frontier_table(
     returns_dict: dict,
     cvar_params: CvarParameters,
@@ -151,8 +171,11 @@ def efficient_frontier_table(
     weights_table.insert(0, "risk_aversion", results_df["risk_aversion"])
     weights_table["cash"] = results_df["cash"].astype(float)
     return results_df, weights_table, fig, ax
+```
 
+## Backtest the optimized portfolio against equal weight
 
+```python
 def backtest_vs_equal_weight(
     returns_dict: dict,
     optimized_portfolio: Portfolio,
@@ -183,8 +206,11 @@ def backtest_vs_equal_weight(
     )
     backtest_results, _ax = tester.backtest_against_benchmarks(plot_returns=False)
     return backtest_results
+```
 
+## Monthly rebalancing
 
+```python
 def rebalance_monthly(
     prices: pd.DataFrame,
     *,
@@ -224,8 +250,11 @@ def rebalance_monthly(
         plot_results=False,
         plot_title="Monthly Rebalancing",
     )
+```
 
+## Minimal end-to-end report
 
+```python
 def build_report(path: str = DEFAULT_DATASET, tickers: list[str] | None = None) -> dict:
     """Minimal end-to-end report for optimization, frontier, and backtest tasks."""
     prices = load_prices(path, tickers=tickers)
@@ -258,3 +287,4 @@ def build_report(path: str = DEFAULT_DATASET, tickers: list[str] | None = None) 
         "backtest": backtest_results,
         "solver": "cuOpt GPU",
     }
+```

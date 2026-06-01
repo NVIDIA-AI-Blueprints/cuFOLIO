@@ -12,10 +12,10 @@ alongside two other testing layers in the repo (see the repo `tests/` directory)
 |---|---|---|---|---|
 | 1. Compliance | `tests/test_skill.py` | SKILL.md spec + `evals.json` schema | No | No |
 | 2. Publish-gate agent evals | `evals/evals.json` (NV-BASE) | with/without-skill agent uplift for the catalog | Yes | `NVIDIA_INFERENCE_KEY` |
-| 3. Skill performance benchmarks | `tests/test_skill_benchmarks.py` + `references/benchmarks/benchmark_workflows.py` + `references/benchmarks/thresholds.toml` | the SKILL.md workflows meet quantitative standards | Yes | No |
+| 3. Skill performance benchmarks | `tests/test_skill_benchmarks.py` + `tests/benchmarks/benchmark_workflows.py` + `tests/benchmarks/thresholds.toml` | the SKILL.md workflows meet quantitative standards | Yes | No |
 
 This file documents **Layer 2** (the NV-BASE agent evals). Layer 1 runs in normal CI; Layer 3 is
-described in `references/benchmarks/benchmark_workflows.py` / `references/benchmarks/thresholds.toml`.
+described in `tests/benchmarks/benchmark_workflows.py` / `tests/benchmarks/thresholds.toml`.
 
 ## Dataset
 

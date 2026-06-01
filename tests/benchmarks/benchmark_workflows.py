@@ -16,9 +16,9 @@ grades a workflow's metrics against ``thresholds.toml`` (the explicit "standards
 
 Run as a script for a report::
 
-    python skills/cufolio/references/benchmarks/benchmark_workflows.py            # fast, small universe
-    python skills/cufolio/references/benchmarks/benchmark_workflows.py --full     # full S&P 500
-    python skills/cufolio/references/benchmarks/benchmark_workflows.py --check    # also print PASS/FAIL
+    python tests/benchmarks/benchmark_workflows.py            # fast, small universe
+    python tests/benchmarks/benchmark_workflows.py --full     # full S&P 500
+    python tests/benchmarks/benchmark_workflows.py --check    # also print PASS/FAIL
 
 or as a pytest gate (auto-skips off-GPU): ``uv run pytest -m gpu``.
 
