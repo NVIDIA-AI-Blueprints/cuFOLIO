@@ -59,6 +59,7 @@ Discoverability, Effectiveness, Efficiency). Paste/auto-fill the results into `.
 
 - Keep this CI-gated set small (P0). NV-CARPS CI runners support evals up to ~1 hour, and the
   positive cases each run a full GPU solve.
-- To avoid per-run downloads in a sandboxed runner, stage a small price CSV under `evals/files/` and
-  point the prompts/data path at it (see the guide's `evals/files/` mechanism).
+- The positive cases download S&P 500 prices on first run. If a sandboxed runner has no network,
+  use the guide's `evals/files/` mechanism to stage a small price CSV (not shipped here — the
+  eval host is expected to install `cufolio` and have network/data access).
 - Negative cases need neither GPU nor data — they only check that the skill does not misfire.
