@@ -3,16 +3,6 @@ name: cufolio
 version: "25.10.00"
 description: Use when a user asks to build, optimize, backtest, rebalance, or analyze a stock portfolio with Mean-CVaR, efficient frontiers, scenario generation, or NVIDIA cuOpt.
 license: Apache-2.0
-author: Jake Goldberg <jgoldberg@nvidia.com>
-tags:
-  - portfolio-optimization
-  - cvar
-  - cuopt
-  - quantitative-finance
-  - gpu
-tools:
-  - shell
-  - python
 metadata:
   author: Jake Goldberg <jgoldberg@nvidia.com>
   tags:
