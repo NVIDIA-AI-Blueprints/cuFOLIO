@@ -770,8 +770,8 @@ def create_efficient_frontier(
             portfolio combinations. Defaults to True.
         discretization_params (dict, optional): Parameters for discretized
             portfolios. Dict with keys: weight_discretization, max_assets,
-            min_weight, max_weight, sum_to_one. Defaults to
-            {"weight_discretization": 10, "max_assets": 5}.
+            min_weight, max_weight. Defaults to {"weight_discretization": 10,
+            "max_assets": 5, "min_weight": 0.0, "max_weight": 1.0}.
         save_path (str, optional): Path to save the figure. Defaults to None.
         title (str, optional): Custom plot title. Defaults to auto-generated.
         print_portfolio_results (bool, optional): Whether to print the portfolio
@@ -781,7 +781,10 @@ def create_efficient_frontier(
 
     Returns:
         tuple: (results_df, fig, ax) containing the optimization results DataFrame,
-            matplotlib figure, and axes objects.
+            matplotlib figure, and axes objects. results_df includes per-portfolio
+            metrics (return, CVaR, variance, volatility, sharpe, risk_aversion) plus
+            a ``weights`` column ({ticker: weight} dict) and ``cash`` for each
+            risk-aversion level.
 
     Example:
         >>> regime = {"name": "full_period", "range": ("2020-01-01", "2023-12-31")}
@@ -802,7 +805,6 @@ def create_efficient_frontier(
             "max_assets": 5,
             "min_weight": 0.0,
             "max_weight": 1.0,
-            "sum_to_one": True,
         }
 
     # Color schemes
@@ -865,6 +867,13 @@ def create_efficient_frontier(
         result_row["sharpe"] = _annualized_sharpe_ratio(
             result_row["return"], result_row["volatility"]
         )
+        result_row["weights"] = dict(
+            zip(
+                returns_dict["tickers"],
+                np.asarray(portfolio.weights, dtype=float).flatten().tolist(),
+            )
+        )
+        result_row["cash"] = float(np.asarray(portfolio.cash).squeeze())
 
         results_data.append(result_row)
         portfolios.append(portfolio)
@@ -1493,7 +1502,7 @@ def compare_cvxpy_vs_cuopt(
     >>> returns_dict = calculate_returns(
     ...     "data/stock_data/sp500.csv", regime, "LOG", cvar_params
     ... )
-    >>> cvar_params = CvarParameters(num_scen=100, confidence=0.95)
+    >>> cvar_params = CvarParameters(w_min=0.0, w_max=1.0, confidence=0.95)
     >>>
     >>> # Compare CVXPY and cuOpt
     >>> cvxpy_settings = {"solver": cp.CLARABEL, "verbose": False}

@@ -1,0 +1,21 @@
+{
+  "name": "nvidia-cufolio-skills",
+  "description": "Agent skill for NVIDIA-accelerated Mean-CVaR portfolio optimization with cuOpt. Use when building or analyzing portfolios.",
+  "version": "25.10.00",
+  "author": {
+    "name": "NVIDIA"
+  },
+  "homepage": "https://github.com/NVIDIA-AI-Blueprints/cuFOLIO",
+  "repository": "https://github.com/NVIDIA-AI-Blueprints/cuFOLIO",
+  "license": "Apache-2.0",
+  "skills": "skills",
+  "keywords": [
+    "nvidia",
+    "cufolio",
+    "cuopt",
+    "portfolio-optimization",
+    "cvar",
+    "quantitative-finance",
+    "gpu"
+  ]
+}

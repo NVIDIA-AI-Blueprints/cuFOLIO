@@ -66,7 +66,7 @@ class Portfolio:
         self.tickers = tickers if tickers is not None else []
         self._n_assets = len(self.tickers)
         self.weights = weights if weights is not None else []
-        self.cash = float(cash)
+        self.cash = float(np.asarray(cash).squeeze())
         self.time_range = time_range
 
     def __eq__(self, other_portfolio, atol=1e-3):

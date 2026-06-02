@@ -79,8 +79,8 @@ To install dependencies on the NVIDIA PyTorch container:
 docker run --gpus all -it --rm -v ./:/workspace/host --ipc=host -p 8888:8888 nvcr.io/nvidia/pytorch:25.10-py3
 
 # Clone the repository
-git clone https://github.com/NVIDIA-AI-Blueprints/quantitative-portfolio-optimization.git
-cd quantitative-portfolio-optimization
+git clone https://github.com/NVIDIA-AI-Blueprints/cuFOLIO.git
+cd cuFOLIO
 
 # Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -152,8 +152,8 @@ We welcome contributions to this project! Please see [CONTRIBUTING.md](CONTRIBUT
 ## Community
 
 For questions, discussions, and community support:
-- **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/NVIDIA-AI-Blueprints/quantitative-portfolio-optimization/issues)
-- **Discussions**: Join conversations in [GitHub Discussions](https://github.com/NVIDIA-AI-Blueprints/quantitative-portfolio-optimization/discussions)
+- **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/NVIDIA-AI-Blueprints/cuFOLIO/issues)
+- **Discussions**: Join conversations in [GitHub Discussions](https://github.com/NVIDIA-AI-Blueprints/cuFOLIO/discussions)
 
 ---
 ## References

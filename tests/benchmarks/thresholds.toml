@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Standards for the cufolio skill performance benchmarks (Layer 3).
+#
+# Each table lists the quantitative pass criteria a documented SKILL.md workflow
+# must meet when run end-to-end on a GPU (see benchmark_workflows.py and
+# tests/test_skill_benchmarks.py). These are the explicit, tunable definition of
+# "the skill is performing up to standard." Loosen a bound here rather than
+# silencing a failing test -- a failure usually means the product drifted away
+# from what SKILL.md promises (e.g. a Trap regressed). Parsed with stdlib tomllib.
+
+[build_optimal]
+weight_sum_tol = 1e-4          # |sum(weights) + cash - 1| must be within this
+cash_weight_max = 0.99         # must NOT collapse to ~100% cash (Trap 2)
+max_single_weight = 0.999      # must NOT be 100% in a single asset
+min_positions = 2              # diversified, non-degenerate allocation
+expected_return_daily_min = 0.0
+expected_return_daily_max = 0.02
+cvar_min = 0.0
+cvar_max = 0.2
+solver_contains = "cuopt"      # str(result["solver"]) must name cuOpt, never a CPU solver
+solve_seconds_max = 60.0
+
+[efficient_frontier]
+num_points = 25                # ra_num solves, all returned as rows
+monotonic_return_tol = 1e-6    # return at max-CVaR endpoint >= return at min-CVaR endpoint
+
+[weights_table]
+min_rows = 12                  # one row per risk-aversion level
+min_weight_columns = 2         # per-asset w_<ticker> columns are present (Trap 3)
+
+[backtest]
+optimized_beats_naive_sharpe = true  # optimized Sharpe > equal-weight Sharpe
+require_finite_metrics = true        # sharpe / sortino / max drawdown all finite
+
+[rebalance]
+min_rebalance_dates = 1        # at least one re-optimization fired
+require_cumulative_value = true

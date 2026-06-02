@@ -3,6 +3,8 @@ import matplotlib
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
+
 from cufolio.backtest import portfolio_backtester
 from cufolio.cvar_data import CvarData
 from cufolio.cvar_optimizer import CVaR
@@ -23,7 +25,6 @@ from cufolio.utils import (
     compare_results,
     compute_absolute_returns,
 )
-from pydantic import ValidationError
 
 matplotlib.use("Agg")
 
@@ -144,36 +145,42 @@ class TestCvarData:
 
 
 class TestCvarParameters:
+    def test_requires_explicit_weight_bounds(self):
+        # CVaR has no silent default bounds; constructing without w_min/w_max
+        # must fail fast with a clear error (not infeasible numbers).
+        with pytest.raises(ValueError):
+            CvarParameters()
+
     def test_defaults(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         assert params.confidence == 0.95
         assert params.cardinality is None
         assert params.T_tar is None
 
     def test_update_confidence_valid(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         params.update_confidence(0.99)
         assert params.confidence == 0.99
 
     def test_update_confidence_invalid(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         with pytest.raises(ValueError):
             params.update_confidence(0.0)
         with pytest.raises(ValueError):
             params.update_confidence(1.5)
 
     def test_update_risk_aversion_invalid(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         with pytest.raises(ValueError):
             params.update_risk_aversion(-1.0)
 
     def test_update_cardinality_invalid(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         with pytest.raises(ValueError):
             params.update_cardinality(-3)
 
     def test_update_c_min_invalid(self):
-        params = CvarParameters()
+        params = CvarParameters(w_min=0.0, w_max=1.0)
         with pytest.raises(ValueError):
             params.update_c_min(-0.1)
 
@@ -415,6 +422,47 @@ class TestEfficientFrontier:
             assert row["variance"] >= 0, "variance must be non-negative"
             assert np.isfinite(row["sharpe"]), "sharpe should be finite"
 
+    def test_frontier_exposes_per_asset_weights(
+        self, returns_dict, cvar_data, cvar_params
+    ):
+        returns_dict["cvar_data"] = cvar_data
+        results_df, _fig, _ax = create_efficient_frontier(
+            returns_dict,
+            cvar_params,
+            {"solver": cp.CLARABEL, "verbose": False},
+            ra_num=3,
+            min_risk_aversion=-1,
+            max_risk_aversion=1,
+            show_plot=False,
+            show_discretized_portfolios=False,
+            benchmark_portfolios=False,
+            print_portfolio_results=False,
+        )
+        assert "weights" in results_df.columns
+        assert "cash" in results_df.columns
+        first = results_df["weights"].iloc[0]
+        assert isinstance(first, dict)
+        assert set(first.keys()) == set(TICKERS)
+
+    def test_discretized_overlay_runs(self, returns_dict, cvar_data, cvar_params):
+        # Regression: show_discretized_portfolios=True with the default
+        # discretization_params used to raise TypeError via a stale 'sum_to_one'
+        # kwarg. It must now run end-to-end (NumPy fallback on CPU).
+        returns_dict["cvar_data"] = cvar_data
+        results_df, _fig, _ax = create_efficient_frontier(
+            returns_dict,
+            cvar_params,
+            {"solver": cp.CLARABEL, "verbose": False},
+            ra_num=2,
+            min_risk_aversion=-1,
+            max_risk_aversion=1,
+            show_plot=False,
+            show_discretized_portfolios=True,
+            benchmark_portfolios=False,
+            print_portfolio_results=False,
+        )
+        assert len(results_df) == 2
+
 
 # ---------------------------------------------------------------------------
 # Backtester with canned data
@@ -492,9 +540,7 @@ class TestBacktester:
         assert 0 <= mdd <= 1, "max drawdown should be between 0 and 1"
 
     def test_cumulative_returns_anchor_to_regime_start(self):
-        dates = pd.to_datetime(
-            ["2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"]
-        )
+        dates = pd.to_datetime(["2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"])
         prices = pd.DataFrame(
             {
                 "AAPL": [100.0, 101.0, 102.0, 103.0],

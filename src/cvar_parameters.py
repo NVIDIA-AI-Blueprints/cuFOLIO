@@ -15,7 +15,7 @@
 from typing import Optional, Union
 
 import numpy as np
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 
 from .base_parameters import BaseParameters
 
@@ -28,13 +28,24 @@ class CvarParameters(BaseParameters):
     for the CVaR risk measure and an optional hard ``cvar_limit``.
     """
 
-    # Override weight bound defaults for CVaR
-    w_min: Union[np.ndarray, dict, float] = 1.0
-    w_max: Union[np.ndarray, dict, float] = 0.0
+    # CVaR requires explicit weight bounds (no silent default) — enforced by the
+    # validator below. Use 0.0 / 1.0 for long-only, or per-asset arrays /
+    # {ticker: value, "others": value} dicts.
+    w_min: Optional[Union[np.ndarray, dict, float]] = None
+    w_max: Optional[Union[np.ndarray, dict, float]] = None
 
     # CVaR-specific fields
     confidence: float = 0.95
     cvar_limit: Optional[float] = None
+
+    @model_validator(mode="after")
+    def _require_weight_bounds(self):
+        if self.w_min is None or self.w_max is None:
+            raise ValueError(
+                "CVaR optimization requires explicit weight bounds: set w_min and "
+                "w_max (e.g. w_min=0.0, w_max=1.0 for long-only)."
+            )
+        return self
 
     @field_validator("confidence")
     @classmethod

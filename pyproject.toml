@@ -42,6 +42,12 @@ ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
+known-first-party = ["cufolio"]
+
+[tool.pytest.ini_options]
+markers = [
+    "gpu: requires an NVIDIA GPU with cuOpt/cuML (deselect with -m 'not gpu')",
+]
 
 [tool.setuptools]
 packages = ["cufolio"]

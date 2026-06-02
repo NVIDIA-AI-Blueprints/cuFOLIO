@@ -78,14 +78,23 @@ jobs:
       - name: Run tests
         run: uv run pytest tests/ -v
 
+  validate-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate agent skills and plugin manifests
+        run: ./ci/utils/validate_skills.sh
+
   pr-builder:
     if: always()
-    needs: [lockfile-check, lint, install-and-test]
+    needs: [lockfile-check, lint, install-and-test, validate-skills]
     runs-on: ubuntu-latest
     steps:
       - name: Check job results
         run: |
-          if [[ "${{ needs.lockfile-check.result }}" != "success" || "${{ needs.lint.result }}" != "success" || "${{ needs.install-and-test.result }}" != "success" ]]; then
+          if [[ "${{ needs.lockfile-check.result }}" != "success" || "${{ needs.lint.result }}" != "success" || "${{ needs.install-and-test.result }}" != "success" || "${{ needs.validate-skills.result }}" != "success" ]]; then
             echo "One or more required jobs failed."
             exit 1
           fi

@@ -130,18 +130,20 @@ returns_dict = {
 
 # Configure optimization parameters
 cvar_params = CvarParameters(
-    alpha=0.95,                    # CVaR confidence level
-    risk_aversion=1.0,             # Risk-return tradeoff
-    weight_lower_bound=0.0,        # Min weight per asset
-    weight_upper_bound=0.3,        # Max weight per asset
-    leverage=1.0                   # No leverage
+    w_min=0.0,                    # Min weight per asset
+    w_max=0.3,                    # Max weight per asset
+    c_min=0.0,
+    c_max=0.0,                    # Fully invested portfolio, no cash
+    risk_aversion=1.0,            # Risk-return tradeoff
+    confidence=0.95,              # CVaR confidence level
+    L_tar=1.0,                    # No leverage
 )
 
-# Create optimizer and solve
+# Create optimizer and solve on cuOpt
 optimizer = CVaR(returns_dict, cvar_params)
 result, portfolio = optimizer.solve_optimization_problem(
-    {"solver": cp.CUOPT}
-) #can replace with other CPU solvers
+    {"solver": cp.CUOPT, "verbose": False, "solver_method": "PDLP"}
+)
 ```
 
 
