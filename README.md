@@ -75,8 +75,13 @@ The above configuration will provide optimal performance for large-scale optimiz
 To install dependencies on the NVIDIA PyTorch container:
 
 ```bash
-# Start the container
-docker run --gpus all -it --rm -v ./:/workspace/host --ipc=host -p 8888:8888 nvcr.io/nvidia/pytorch:25.10-py3
+# Start the container. Publish 8888 for Jupyter and 8501 for Streamlit.
+docker run --gpus all -it --rm \
+  -v ./:/workspace/host \
+  --ipc=host \
+  -p 8888:8888 \
+  -p 8501:8501 \
+  nvcr.io/nvidia/pytorch:25.10-py3
 
 # Clone the repository
 git clone https://github.com/NVIDIA-AI-Blueprints/cuFOLIO.git
@@ -109,6 +114,7 @@ uv run jupyter lab --no-browser --NotebookApp.token=''
 **Important Notes:**
 - If you encounter "No space left on device" errors, set `UV_CACHE_DIR` to an alternate cache location: `export UV_CACHE_DIR=/path/to/cache/directory`
 - The `cuda12` and `cuda13` extras are mutually exclusive - install only one based on your system's CUDA version
+- If you plan to run the Streamlit demo from this container, include `-p 8501:8501` when starting Docker. Docker port mappings cannot be added to an already-running container; restart the container with the port published if it was omitted.
 
 #### Using the Jupyter Kernel
 
@@ -134,6 +140,26 @@ Explore the example notebooks in the [`notebooks/`](notebooks/) directory:
 - **`cvar_basic.ipynb`**: Complete walkthrough of Mean-CVaR portfolio optimization with GPU acceleration
 - **`efficient_frontier.ipynb`**: A quick tutorial on how to generate efficient frontier.
 - **`rebalancing_strategies.ipynb`** Introduction to dynamic re-balancing and examples of testing strategies
+
+### Streamlit GTC Demo
+
+The Streamlit demo from the GTC branch is available under [`demo/`](demo/) as a dynamic rebalancing app.
+
+If you are using the PyTorch Docker container above, make sure it was started with `-p 8501:8501`. Streamlit must bind to `0.0.0.0` inside the container so the published Docker port can receive browser traffic.
+
+```bash
+uv pip install -r demo/requirements.txt
+uv run python -c "from cufolio.utils import download_data; download_data('data/stock_data', datasets=['sp500'])"
+uv run streamlit run demo/rebalancing_streamlit_app.py --server.address 0.0.0.0 --server.port 8501
+```
+
+For a remote GPU host, also forward port `8501` from your laptop to the host running Docker:
+
+```bash
+ssh -L 8501:localhost:8501 <user>@<remote-host>
+```
+
+See [`demo/README_streamlit.md`](demo/README_streamlit.md) for focused deployment instructions.
 
 ### Deploy on Brev
 Deploy using [Brev launchable](https://brev.nvidia.com/launchable/deploy?launchableID=env-360InRZzyHqDnJYQKIxaSggF8xI): start an instance on Brev.nvidia.com and follow the instructions in the notebooks. 

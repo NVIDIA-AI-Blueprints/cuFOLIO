@@ -1,0 +1,3 @@
+streamlit==1.58.0
+plotly==6.8.0
+squarify==0.4.4
