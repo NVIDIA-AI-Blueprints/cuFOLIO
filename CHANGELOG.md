@@ -3,11 +3,78 @@
 All notable changes to this project are documented here, one PR per entry,
 newest first, dated by merge to `main`. Backfilled from git history.
 
-## 2026-04-22 — PR #TBD
+## 2026-06-05 — PR #47
+
+Add the public Streamlit rebalancing demo.
+
+- Added `demo/rebalancing_streamlit_app.py`, shared demo parameters, demo
+  requirements, Streamlit theme config, and supporting architecture / benchmark
+  / animation media.
+- Updated the root README and demo README with Docker port publishing,
+  dataset-download, and remote Streamlit launch instructions.
+
+## 2026-06-02 — PR #46
+
+Add the cuFOLIO agent skill for the NVIDIA skills catalog.
+
+- Added agent/plugin manifests, `skills/cufolio/SKILL.md`, skill card,
+  benchmark docs, eval definitions, and workflow recipes.
+- Added skill validation workflow/utilities plus benchmark and static skill tests.
+- Hardened cuFOLIO APIs and docs around scenario inputs, portfolio behavior,
+  and benchmark workflows.
+
+## 2026-05-28 — PR #45
+
+Fix efficient-frontier benchmark behavior for zero-risk portfolios.
+
+- Treat zero-volatility efficient-frontier points as undefined Sharpe ratios
+  instead of allowing `0/0` to participate in max-Sharpe selection.
+- Added regression coverage in `tests/test_core.py`.
+
+## 2026-05-27 — PR #41
+
+Refresh source workflows for backtesting and rebalancing.
+
+- Updated `src/backtest.py`, `src/rebalance.py`, and related CVaR utility logic.
+- Added tests covering the refreshed workflow behavior.
+
+## 2026-05-26 — PR #42
+
+Enhance notebook setup and reduce CI/logging noise.
+
+- Updated the main CI workflow and `notebooks/launchable.ipynb` setup flow.
+- Reduced noisy data-download logging in `src/utils.py`.
+
+## 2026-05-04 — PR #37
 
 Add `CHANGELOG.md`, backfilled from `git log --merges --first-parent origin/main`.
 One entry per merged PR, newest first, `## YYYY-MM-DD — PR #N` headers.
 No source/config changes.
+
+## 2026-04-22 — PR #40
+
+Fix invalid notebook JSON to satisfy the `nbformat` schema.
+
+- Regenerated / repaired notebook JSON for launchable, efficient-frontier,
+  and mean-variance notebooks.
+
+## 2026-04-22 — PR #39
+
+Sync launchable notebooks with source updates and add Mean-Variance coverage.
+
+- Updated Brev and launchable notebook content/setup.
+- Added related dependency, license, utility, and test updates.
+
+## 2026-04-22 — PR #38
+
+Update launchable notebook API usage for cuOpt 26.4 and the Pydantic settings
+migration.
+
+## 2026-04-22 — PR #36
+
+Fix notebook cuOpt presolve settings for cuOpt 26.4 compatibility.
+
+- Changed notebook presolve values from `False` to `0` where required.
 
 ## 2026-04-21 — PR #34
 
