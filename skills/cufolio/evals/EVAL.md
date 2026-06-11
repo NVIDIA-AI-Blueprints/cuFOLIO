@@ -19,6 +19,15 @@ described in `tests/benchmarks/benchmark_workflows.py` / `tests/benchmarks/thres
 
 ## Dataset
 
+There are two datasets, same schema:
+
+- `evals.json` — the **CI publish-gate set (P0, 4 cases)**: 2 positives
+  (`build-optimal-cvar`, `efficient-frontier-plot`) + 2 strong negatives
+  (`neg-vehicle-routing`, `neg-nn-price-forecast`). Sized to finish inside the
+  ~1h NV-CARPS CI cap (see Notes).
+- `evals-full.json` — the **full set (9 cases)**: all positives and negatives,
+  run on the nightly/manual job (longer timeout) for the published catalog benchmark.
+
 `evals.json` follows the NV-BASE / agentskills.io eval format. Each case has:
 
 - `id` — unique identifier
@@ -58,7 +67,10 @@ Discoverability, Effectiveness, Efficiency). Paste/auto-fill the results into `.
 ## Notes
 
 - Keep this CI-gated set small (P0). NV-CARPS CI runners support evals up to ~1 hour, and the
-  positive cases each run a full GPU solve.
+  positive cases each run a full GPU solve. The publish gate runs `evals.json` (4 cases); the
+  full `evals-full.json` (9 cases) is for the longer nightly/manual run. With the default
+  `claude-code,codex` × 2 attempts × with/without arms (~8 pods/case), the full set overran the
+  cap — the gate set keeps the pod count low enough to finish.
 - The positive cases download S&P 500 prices on first run. If a sandboxed runner has no network,
   use the guide's `evals/files/` mechanism to stage a small price CSV (not shipped here — the
   eval host is expected to install `cufolio` and have network/data access).

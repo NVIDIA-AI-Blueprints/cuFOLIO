@@ -34,7 +34,7 @@ Mitigation: Review and scan skill before deployment. <br>
 - codex <br>
 
 ## Evaluation Tasks: <br>
-Evaluated against 9 cases (5 positive + 4 negative) with 2 attempts per agent; pass threshold 60%. NVSkills-Eval profile: external. Results pending the GPU agent-eval run (see `evals/EVAL.md` and `BENCHMARK.md`). <br>
+Full set: 9 cases (5 positive + 4 negative) with 2 attempts per agent; pass threshold 60% (`evals/evals-full.json`, nightly/manual run). The CI publish gate runs a 4-case P0 subset (`evals/evals.json`) to fit the ~1h runner cap. NVSkills-Eval profile: external. Results pending the GPU agent-eval run (see `evals/EVAL.md` and `BENCHMARK.md`). <br>
 
 ## Evaluation Metrics Used: <br>
 Reported benchmark dimensions: <br>
