@@ -22,6 +22,15 @@ cvar_max = 0.2
 solver_contains = "cuopt"      # str(result["solver"]) must name cuOpt, never a CPU solver
 solve_seconds_max = 60.0
 
+[socp_variance_limit]
+weight_sum_tol = 1e-4
+cash_weight_max = 1e-4
+variance_limit_tol = 1e-6
+min_positions = 1
+solver_contains = "cuopt"
+problem_type_contains = "socp"
+solve_seconds_max = 60.0
+
 [efficient_frontier]
 num_points = 25                # ra_num solves, all returned as rows
 monotonic_return_tol = 1e-6    # return at max-CVaR endpoint >= return at min-CVaR endpoint

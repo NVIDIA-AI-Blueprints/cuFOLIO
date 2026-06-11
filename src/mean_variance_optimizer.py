@@ -140,10 +140,38 @@ class MeanVariance(base_optimizer.BaseOptimizer):
         self._setup_optimization_problem()
 
     def _validate_cuopt_setup(self):
-        if self.params.var_limit is not None:
+        if self.params.cardinality is not None:
             raise NotImplementedError(
-                "cuOpt Python API does not support 'var_limit' (quadratic constraint)."
+                "cuOpt Python API does not support cardinality for "
+                "Mean-Variance. Mixed-integer SOCP/QCQP is not implemented."
             )
+
+    def _covariance_for_quadratic_terms(self) -> np.ndarray:
+        """Return a finite symmetric PSD covariance matrix for QP/SOCP terms."""
+        covariance = np.asarray(self.covariance, dtype=float)
+        expected_shape = (self.n_assets, self.n_assets)
+        if covariance.shape != expected_shape:
+            raise ValueError(
+                f"Covariance matrix must have shape {expected_shape}; "
+                f"got {covariance.shape}."
+            )
+        if not np.all(np.isfinite(covariance)):
+            raise ValueError("Covariance matrix must contain only finite values.")
+
+        covariance = 0.5 * (covariance + covariance.T)
+        min_eigenvalue = float(np.linalg.eigvalsh(covariance).min())
+        tolerance = 1e-10
+        if min_eigenvalue < -tolerance:
+            raise ValueError(
+                "Covariance matrix must be positive semidefinite for "
+                "Mean-Variance QP/SOCP optimization; minimum eigenvalue is "
+                f"{min_eigenvalue:.3e}."
+            )
+        if min_eigenvalue < 0:
+            covariance = covariance + np.eye(self.n_assets) * (
+                -min_eigenvalue + tolerance
+            )
+        return covariance
 
     def _scale_risk_aversion(self):
         """
@@ -201,8 +229,11 @@ class MeanVariance(base_optimizer.BaseOptimizer):
         self.cardinality_param = cp.Parameter(name="cardinality")
 
         # Set up expressions for optimization
+        self._quadratic_covariance = self._covariance_for_quadratic_terms()
         self.expected_ptf_returns = self.mean.T @ self.w
-        self.portfolio_variance = cp.quad_form(self.w, cp.psd_wrap(self.covariance))
+        self.portfolio_variance = cp.quad_form(
+            self.w, cp.psd_wrap(self._quadratic_covariance)
+        )
 
         # Add variable bounds constraints (only if using parameter constraints)
         constraints = []
@@ -288,6 +319,7 @@ class MeanVariance(base_optimizer.BaseOptimizer):
         """
         from cuopt.linear_programming.problem import (
             CONTINUOUS,
+            MAXIMIZE,
             MINIMIZE,
             LinearExpression,
             Problem,
@@ -295,6 +327,8 @@ class MeanVariance(base_optimizer.BaseOptimizer):
         )
 
         num_assets = self.n_assets
+        covariance = self._covariance_for_quadratic_terms()
+        self._quadratic_covariance = covariance
         timing = {}
 
         # Step 1: Create problem
@@ -427,29 +461,61 @@ class MeanVariance(base_optimizer.BaseOptimizer):
         else:
             timing["group_constraints"] = 0.0
 
-        # Step 4: Build objective using QuadraticExpression (matrix form)
-        #   minimize: risk_aversion * (w' Σ w) - (μ' w)
+        # Step 3f: Variance cap as a convex quadratic constraint. cuOpt converts
+        # this QCQP row to SOCP form and solves it with the barrier method.
+        if self.params.var_limit is not None:
+            t0 = time.time()
+            total_vars = problem.NumVariables
+            variance_q_matrix = np.zeros((total_vars, total_vars))
+            variance_q_matrix[:num_assets, :num_assets] = covariance
+            variance_expr = QuadraticExpression(
+                variance_q_matrix, problem.getVariables()
+            )
+            problem.addConstraint(
+                variance_expr <= float(self.params.var_limit),
+                name="variance_limit",
+            )
+            timing["variance_limit_constraint"] = time.time() - t0
+        else:
+            timing["variance_limit_constraint"] = 0.0
 
-        # 4a: Quadratic term via matrix — pad covariance to full problem
+        # Step 4: Build objective using QuadraticExpression (matrix form)
+        #   minimize: risk_aversion * (w.T Sigma w) - (mu.T w)
+        #   or, with var_limit: maximize mu.T w subject to w.T Sigma w <= limit
+
+        # 4a: Quadratic term via matrix. Pad covariance to full problem
         #     dimension (NumVariables x NumVariables) so it is compatible
-        #     with cuopt's setObjective internals.
+        #     with cuOpt setObjective internals. The hard variance-cap
+        #     formulation uses the same quadratic expression as a constraint
+        #     and maximizes expected return with a linear objective instead.
         t0 = time.time()
-        total_vars = problem.NumVariables
-        q_matrix = np.zeros((total_vars, total_vars))
-        q_matrix[:num_assets, :num_assets] = self.params.risk_aversion * self.covariance
-        quad_expr = QuadraticExpression(q_matrix, problem.getVariables())
+        if self.params.var_limit is None:
+            total_vars = problem.NumVariables
+            q_matrix = np.zeros((total_vars, total_vars))
+            q_matrix[:num_assets, :num_assets] = (
+                self.params.risk_aversion * covariance
+            )
+            quad_expr = QuadraticExpression(q_matrix, problem.getVariables())
+        else:
+            quad_expr = None
         timing["build_quad_matrix"] = time.time() - t0
 
-        # 4b: Linear term: -μ'w
+        # 4b: Linear return term. Without a hard variance cap this is -mu.T w
+        #     because the model minimizes risk_aversion * variance - return.
+        #     With a hard cap it is +mu.T w because the model maximizes return.
         t0 = time.time()
-        lin_coeffs = [-float(self.mean[i]) for i in range(num_assets)]
+        linear_sign = -1.0 if self.params.var_limit is None else 1.0
+        lin_coeffs = [linear_sign * float(self.mean[i]) for i in range(num_assets)]
         lin_expr = LinearExpression(w_vars, lin_coeffs, 0.0)
         timing["build_linear_expr"] = time.time() - t0
 
         # 4c: Combine and set objective
         t0 = time.time()
-        objective_expr = quad_expr + lin_expr
-        problem.setObjective(objective_expr, sense=MINIMIZE)
+        if self.params.var_limit is None:
+            objective_expr = quad_expr + lin_expr
+            problem.setObjective(objective_expr, sense=MINIMIZE)
+        else:
+            problem.setObjective(lin_expr, sense=MAXIMIZE)
         timing["set_objective"] = time.time() - t0
 
         # Print setup summary
@@ -461,7 +527,12 @@ class MeanVariance(base_optimizer.BaseOptimizer):
         )
         print(f"Covariance matrix: {num_assets}x{num_assets}")
         print(f"Linear terms: {num_assets}")
-        print("Problem Type: QP (Quadratic Programming)")
+        if self.params.var_limit is not None:
+            print(f"Variance hard limit: {self.params.var_limit:.6f}")
+            print("Quadratic constraints: 1 variance cap")
+            print("Problem Type: SOCP/QCQP (quadratic variance cap)")
+        else:
+            print("Problem Type: QP (Quadratic Programming)")
         print(f"{'=' * 50}")
 
         return problem, variables, timing
@@ -506,7 +577,10 @@ class MeanVariance(base_optimizer.BaseOptimizer):
         cash = self._cuopt_variables["c"].getValue()
 
         expected_return = np.dot(self.mean, weights)
-        variance_value = weights @ self.covariance @ weights
+        covariance = getattr(
+            self, "_quadratic_covariance", self._covariance_for_quadratic_terms()
+        )
+        variance_value = weights @ covariance @ weights
 
         objective_value = self._cuopt_problem.ObjValue
 
