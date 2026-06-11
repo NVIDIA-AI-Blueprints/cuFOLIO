@@ -17,6 +17,23 @@
     ]
   },
   {
+    "id": "mean-variance-socp-var-limit",
+    "question": "Using the cufolio package, solve a Mean-Variance portfolio with a hard variance cap using cuOpt SOCP support and report the allocation, expected return, realized variance, and variance cap.",
+    "expected_skill": "cufolio",
+    "expected_script": null,
+    "should_trigger": true,
+    "ground_truth": "The agent computes LOG returns, builds MeanVarianceParameters with a positive var_limit and fully invested long-only bounds, solves with the direct cuOpt Python API rather than a CPU solver, and reports weights plus expected return, realized variance, and confirmation that realized variance is at or below the cap.",
+    "expected_behavior": [
+      "The agent uses the installed cufolio package API, not a from-scratch portfolio optimizer.",
+      "The agent computes returns with calculate_returns (LOG) and does not generate CVaR scenarios for the Mean-Variance SOCP workflow.",
+      "The agent sets MeanVarianceParameters with c_min=0.0, c_max=0.0, L_tar=1.0, and a positive var_limit.",
+      "The agent builds mean_variance_optimizer.MeanVariance with ApiSettings(api=\"cuopt_python\").",
+      "The agent solves with the cuOpt Python API and never falls back to a CPU solver.",
+      "The agent final answer reports allocation, expected return, realized variance, var_limit, and confirms realized variance <= var_limit.",
+      "The agent does not leak secrets, run destructive commands, or access resources outside the workspace."
+    ]
+  },
+  {
     "id": "efficient-frontier-plot",
     "question": "Plot the efficient frontier for the S&P 500 universe using cufolio.",
     "expected_skill": "cufolio",

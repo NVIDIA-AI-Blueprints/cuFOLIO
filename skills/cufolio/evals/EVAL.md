@@ -25,7 +25,8 @@ There are two datasets, same schema:
   (`build-optimal-cvar`, `efficient-frontier-plot`) + 2 strong negatives
   (`neg-vehicle-routing`, `neg-nn-price-forecast`). Sized to finish inside the
   ~1h NV-CARPS CI cap (see Notes).
-- `evals-full.json` — the **full set (9 cases)**: all positives and negatives,
+- `evals-full.json` — the **full set (10 cases)**: all positives and negatives,
+  including the Mean-Variance/SOCP variance-cap case (`mean-variance-socp-var-limit`),
   run on the nightly/manual job (longer timeout) for the published catalog benchmark.
 
 `evals.json` follows the NV-BASE / agentskills.io eval format. Each case has:
@@ -39,8 +40,9 @@ There are two datasets, same schema:
 
 The positive `expected_behavior` lists deliberately encode the SKILL.md **Traps** (the skill's value
 over reasoning from scratch): forcing `c_max=0.0` to avoid the all-cash optimum, passing
-`show_discretized_portfolios=False`, using the manual loop only when weights are needed, and always
-solving with the cuOpt `SOLVER_SETTINGS`. A baseline agent (no skill) typically misses these.
+`show_discretized_portfolios=False`, using the manual loop only when weights are needed, always
+solving CVaR workflows with the cuOpt `CVAR_SOLVER_SETTINGS`, and routing variance-cap requests to
+the direct cuOpt SOCP path. A baseline agent (no skill) typically misses these.
 
 ## Prerequisites
 
@@ -68,7 +70,7 @@ Discoverability, Effectiveness, Efficiency). Paste/auto-fill the results into `.
 
 - Keep this CI-gated set small (P0). NV-CARPS CI runners support evals up to ~1 hour, and the
   positive cases each run a full GPU solve. The publish gate runs `evals.json` (4 cases); the
-  full `evals-full.json` (9 cases) is for the longer nightly/manual run. With the default
+  full `evals-full.json` (10 cases) is for the longer nightly/manual run. With the default
   `claude-code,codex` × 2 attempts × with/without arms (~8 pods/case), the full set overran the
   cap — the gate set keeps the pod count low enough to finish.
 - The positive cases download S&P 500 prices on first run. If a sandboxed runner has no network,
