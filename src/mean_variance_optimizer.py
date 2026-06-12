@@ -492,9 +492,7 @@ class MeanVariance(base_optimizer.BaseOptimizer):
         if self.params.var_limit is None:
             total_vars = problem.NumVariables
             q_matrix = np.zeros((total_vars, total_vars))
-            q_matrix[:num_assets, :num_assets] = (
-                self.params.risk_aversion * covariance
-            )
+            q_matrix[:num_assets, :num_assets] = self.params.risk_aversion * covariance
             quad_expr = QuadraticExpression(q_matrix, problem.getVariables())
         else:
             quad_expr = None
