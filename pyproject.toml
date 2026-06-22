@@ -1,6 +1,6 @@
 [project]
 name = "cufolio"
-version = "25.10"
+version = "26.04"
 description = "Quantitative Portfolio Optimization developer example"
 readme = "README.md"
 requires-python = ">=3.11"
