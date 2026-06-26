@@ -15,7 +15,7 @@
 
 """cufolio: GPU-accelerated portfolio optimization with cuOpt."""
 
-version = "1.0.0"
+version = "26.4"
 
 from .base_parameters import BaseParameters
 from .cvar_data import CvarData
