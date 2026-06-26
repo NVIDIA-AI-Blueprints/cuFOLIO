@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.0.0",
     "pandas>=2.0",
-    "cvxpy>=1.9.1",
+    "cvxpy>=1.9.2",
     "scikit-learn>=1.5",
     "seaborn>=0.13",
     "yfinance>=0.2.0",
