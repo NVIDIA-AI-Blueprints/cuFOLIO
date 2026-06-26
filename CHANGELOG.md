@@ -3,6 +3,32 @@
 All notable changes to this project are documented here, one PR per entry,
 newest first, dated by merge to `main`. Backfilled from git history.
 
+## 2026-06-26 — PR #50
+
+Add cuOpt SOCP variance-cap support to the Mean-Variance optimizer.
+
+- Added a direct cuOpt SOCP path for Mean-Variance variance-cap constraints:
+  the variance cap is modeled as a convex quadratic (QCQP) row via
+  `QuadraticExpression` that cuOpt converts to second-order-cone form and solves
+  with the barrier method (`src/mean_variance_optimizer.py`,
+  `src/mean_variance_parameters.py`).
+- Added `_covariance_for_quadratic_terms` to sanitize the covariance for
+  QP/SOCP terms (shape/finiteness checks, symmetrization, and PSD enforcement
+  via a minimum-eigenvalue diagonal floor).
+- Bumped cuOpt/cuML to 26.06 for the `cuda12` extra and added a cuOpt-only
+  `cuda13-socp` extra (`cuopt-cu13==26.6.*`) for CUDA 13 SOCP solves, since
+  `cuml-cu13` 26.06 is not yet published; `cuda13` still tracks 26.04.
+- Switched cvxpy from the pinned git-master build to the released
+  `cvxpy>=1.9.2` and dropped the `[tool.uv.sources]` git pin.
+- Added SOCP unit + GPU tests (`tests/test_core.py`), a SOCP benchmark workflow
+  (`tests/benchmarks/benchmark_workflows.py`, `tests/benchmarks/thresholds.toml`,
+  `tests/test_skill_benchmarks.py`), and the `mean-variance-socp-var-limit`
+  eval case (`skills/cufolio/evals/evals-full.json`, now 10 cases).
+- Updated docs: `skills/cufolio/SKILL.md`,
+  `skills/cufolio/references/workflows/agent_recipes.md`,
+  `skills/cufolio/skill-card.md`, `skills/cufolio/evals/EVAL.md`, and the root
+  `README.md` install instructions for the new extra.
+
 ## 2026-06-05 — PR #47
 
 Add the public Streamlit rebalancing demo.

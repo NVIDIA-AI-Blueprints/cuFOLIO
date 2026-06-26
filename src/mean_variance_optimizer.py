@@ -518,7 +518,7 @@ class MeanVariance(base_optimizer.BaseOptimizer):
 
         # Print setup summary
         print(f"{'=' * 50}")
-        print("cuOpt MEAN-VARIANCE (QP) PROBLEM SETUP COMPLETED")
+        print("cuOpt MEAN-VARIANCE PROBLEM SETUP COMPLETED")
         print(f"{'=' * 50}")
         print(
             f"Variables: {num_assets} weights + 1 cash + {2 * num_assets} leverage aux"
