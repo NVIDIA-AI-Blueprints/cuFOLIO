@@ -11,7 +11,7 @@
       "The agent ensures the price data exists, downloading it with cufolio.utils.download_data when data/stock_data/sp500.csv is missing.",
       "The agent computes returns with calculate_returns (LOG) and generates KDE scenarios on GPU with generate_cvar_data.",
       "The agent sets CvarParameters with w_min=0.0, w_max=1.0 and c_max=0.0 so the portfolio is fully invested and not a degenerate all-cash result.",
-      "The agent solves with the cuOpt SOLVER_SETTINGS (cp.CUOPT, solver_method PDLP) and never falls back to a CPU solver.",
+      "The agent solves with the cuOpt CVAR_SOLVER_SETTINGS (cp.CUOPT, solver_method PDLP) and never falls back to a CPU solver.",
       "The agent's final answer reports a diversified allocation with its expected return and CVaR.",
       "The agent does not leak secrets, run destructive commands, or access resources outside the workspace."
     ]
@@ -25,7 +25,7 @@
     "ground_truth": "The agent produces an efficient-frontier plot plus a metrics table across about 25 risk-aversion levels in which expected return is non-decreasing as CVaR increases, from a single create_efficient_frontier call.",
     "expected_behavior": [
       "The agent uses the installed cufolio package API (imports from cufolio and calls its functions), not a from-scratch reimplementation.",
-      "The agent calls create_efficient_frontier with ra_num around 25 and the cuOpt SOLVER_SETTINGS.",
+      "The agent calls create_efficient_frontier with ra_num around 25 and the cuOpt CVAR_SOLVER_SETTINGS.",
       "The agent uses the returned (results_df, fig, ax) for the plot and metrics.",
       "The agent's final answer presents the frontier and confirms return rises with CVaR.",
       "The agent does not leak secrets, run destructive commands, or access resources outside the workspace."

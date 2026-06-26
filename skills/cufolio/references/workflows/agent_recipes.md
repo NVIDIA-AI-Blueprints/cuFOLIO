@@ -10,16 +10,30 @@ requested output — do not reimplement the package.
 ```python
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 import cvxpy as cp
 import numpy as np
 import pandas as pd
 
-from cufolio import backtest, cvar_optimizer, cvar_utils, rebalance, utils
+from cufolio import (
+    backtest,
+    cvar_optimizer,
+    cvar_utils,
+    mean_variance_optimizer,
+    rebalance,
+    utils,
+)
 from cufolio.cvar_parameters import CvarParameters
+from cufolio.mean_variance_parameters import MeanVarianceParameters
 from cufolio.portfolio import Portfolio
-from cufolio.settings import KDESettings, ReturnsComputeSettings, ScenarioGenerationSettings
+from cufolio.settings import (
+    ApiSettings,
+    KDESettings,
+    ReturnsComputeSettings,
+    ScenarioGenerationSettings,
+)
 
 DEFAULT_DATASET = "data/stock_data/sp500.csv"
 ```
@@ -43,6 +57,20 @@ def require_cuopt_solver() -> dict:
         )
 
     return {"solver": cp.CUOPT, "verbose": False, "solver_method": "PDLP"}
+```
+
+## Direct cuOpt Python API settings — QP/SOCP
+
+```python
+def require_cuopt_python_api() -> dict:
+    """Return direct cuOpt API settings or fail clearly if cuOpt is unavailable."""
+    if importlib.util.find_spec("cuopt") is None:
+        raise RuntimeError(
+            "cuOpt is required for Mean-Variance QP/SOCP workflows. "
+            "Install the CUDA/cuOpt-enabled cuFOLIO environment and do not "
+            "substitute a CPU solver."
+        )
+    return {}
 ```
 
 ## CVaR parameters — fully invested (avoid the all-cash optimum)
@@ -124,6 +152,35 @@ def prepare_returns(prices: pd.DataFrame, *, num_scen: int = 10_000) -> dict:
     )
 ```
 
+## Mean-Variance SOCP parameters — variance cap
+
+```python
+def equal_weight_variance_cap(returns_dict: dict, *, multiplier: float = 1.05) -> float:
+    """Build a feasible default cap from the equal-weight portfolio variance."""
+    covariance = np.asarray(returns_dict["covariance"], dtype=float)
+    weights = np.ones(len(returns_dict["tickers"])) / len(returns_dict["tickers"])
+    return float(weights @ covariance @ weights) * multiplier
+
+
+def variance_cap_params(
+    returns_dict: dict,
+    *,
+    var_limit: float | None = None,
+    w_min: float = 0.0,
+    w_max: float = 1.0,
+) -> MeanVarianceParameters:
+    """Fully invested Markowitz parameters with a hard variance cap."""
+    cap = var_limit if var_limit is not None else equal_weight_variance_cap(returns_dict)
+    return MeanVarianceParameters(
+        w_min=w_min,
+        w_max=w_max,
+        c_min=0.0,
+        c_max=0.0,
+        L_tar=1.0,
+        var_limit=cap,
+    )
+```
+
 ## Optimize one Mean-CVaR allocation
 
 ```python
@@ -138,6 +195,35 @@ def optimize_portfolio(
     returns_dict = prepare_returns(prices)
     params = cvar_params or fully_invested_params()
     optimizer = cvar_optimizer.CVaR(returns_dict, params)
+    result_row, portfolio = optimizer.solve_optimization_problem(
+        solver_settings=solver_settings,
+        print_results=False,
+    )
+    return result_row, portfolio, returns_dict
+```
+
+## Optimize one Mean-Variance SOCP allocation
+
+```python
+def optimize_variance_cap_portfolio(
+    prices: pd.DataFrame,
+    *,
+    var_limit: float | None = None,
+    solver_settings: dict | None = None,
+) -> tuple[pd.Series, Portfolio, dict]:
+    """Solve a direct cuOpt Mean-Variance allocation with a hard variance cap."""
+    solver_settings = solver_settings if solver_settings is not None else require_cuopt_python_api()
+    returns_dict = utils.calculate_returns(
+        prices,
+        regime_dict=None,
+        returns_compute_settings=ReturnsComputeSettings(return_type="LOG"),
+    )
+    params = variance_cap_params(returns_dict, var_limit=var_limit)
+    optimizer = mean_variance_optimizer.MeanVariance(
+        returns_dict,
+        params,
+        api_settings=ApiSettings(api="cuopt_python"),
+    )
     result_row, portfolio = optimizer.solve_optimization_problem(
         solver_settings=solver_settings,
         print_results=False,

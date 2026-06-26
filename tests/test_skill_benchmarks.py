@@ -57,6 +57,12 @@ def test_build_optimal_is_non_degenerate(prepared, thresholds):
     assert not fails, fails
 
 
+def test_socp_variance_limit_solves(prepared, thresholds):
+    metrics = bw.run_socp_variance_limit(prepared["returns_dict"])
+    fails = bw.check_socp_variance_limit(metrics, thresholds["socp_variance_limit"])
+    assert not fails, fails
+
+
 def test_efficient_frontier_is_monotonic(prepared, thresholds):
     metrics = bw.run_efficient_frontier(prepared["returns_dict"])
     fails = bw.check_efficient_frontier(metrics, thresholds["efficient_frontier"])

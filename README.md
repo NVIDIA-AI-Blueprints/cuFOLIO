@@ -95,10 +95,14 @@ source $HOME/.local/bin/env  # (sh, bash, zsh)
 # source $HOME/.local/bin/env.fish  # (fish)
 
 # Install with CUDA-specific dependencies
-uv sync --extra cuda13 # this container image has cuda13
+uv sync --extra cuda13 # full CUDA 13 stack currently tracks cuOpt/cuML 26.04
+# On CUDA 12 hosts, use the full cuOpt/cuML 26.06 stack:
+# uv sync --extra cuda12
+# For direct SOCP testing on CUDA 13 with cuOpt 26.06:
+# uv sync --extra cuda13-socp
 
 # Optional: Install development tools
-uv sync --extra cuda13 --extra dev  
+uv sync --extra cuda13 --extra dev
 
 # Create a Jupyter kernel for this environment
 uv run python -m ipykernel install --user --name=portfolio-opt --display-name "Portfolio Optimization"
@@ -107,13 +111,13 @@ uv run python -m ipykernel install --user --name=portfolio-opt --display-name "P
 uv run jupyter lab --no-browser --NotebookApp.token=''
 ```
 
-**Note:** If you use a different container image than the suggested one above, during uv sync, please use the `--extra cuda12` or `--extra cuda13` flag to install the GPU packages (cuOpt, cuML) matching your container's CUDA version. The `uv sync` command automatically creates a virtual environment and installs all dependencies from `uv.lock`.
+**Note:** If you use a different container image than the suggested one above, during uv sync, use `--extra cuda12` for the full cuOpt/cuML 26.06 CUDA 12 stack or `--extra cuda13` for the current full CUDA 13 cuOpt/cuML stack. As of the cuOpt 26.06 release, `cuml-cu13` 26.06 is not published, so CUDA 13 SOCP testing with cuOpt 26.06 uses `--extra cuda13-socp`; that extra is cuOpt-only and is intended for direct SOCP preview/Mean-Variance variance-cap solves, not GPU KDE/CVaR rebalancing. The `uv sync` command automatically creates a virtual environment and installs all dependencies from `uv.lock`.
 
 **Tip:** To check your CUDA version, run `nvidia-smi` and look for "CUDA Version" in the output.
 
 **Important Notes:**
 - If you encounter "No space left on device" errors, set `UV_CACHE_DIR` to an alternate cache location: `export UV_CACHE_DIR=/path/to/cache/directory`
-- The `cuda12` and `cuda13` extras are mutually exclusive - install only one based on your system's CUDA version
+- The `cuda12`, `cuda13`, and `cuda13-socp` extras are mutually exclusive - install only one based on your system's CUDA version and workflow
 - If you plan to run the Streamlit demo from this container, include `-p 8501:8501` when starting Docker. Docker port mappings cannot be added to an already-running container; restart the container with the port published if it was omitted.
 
 #### Using the Jupyter Kernel

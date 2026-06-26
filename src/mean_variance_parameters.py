@@ -14,6 +14,8 @@
 # limitations under the License.
 from typing import Optional
 
+from pydantic import field_validator
+
 from .base_parameters import BaseParameters
 
 
@@ -28,8 +30,9 @@ class MeanVarianceParameters(BaseParameters):
     # Mean-Variance-specific field
     var_limit: Optional[float] = None
 
-    def validate_var_limit(self, value: Optional[float]) -> Optional[float]:
-        if value is not None:
-            if not isinstance(value, float) or value <= 0:
-                raise ValueError("Variance limit must be positive.")
+    @field_validator("var_limit")
+    @classmethod
+    def validate_var_limit(cls, value: Optional[float]) -> Optional[float]:
+        if value is not None and value <= 0:
+            raise ValueError("Variance limit must be positive.")
         return value

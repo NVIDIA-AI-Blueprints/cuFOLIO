@@ -1,5 +1,5 @@
 ## Description: <br>
-Use when a user asks to build, optimize, backtest, rebalance, or analyze a stock portfolio with Mean-CVaR, efficient frontiers, scenario generation, or NVIDIA cuOpt. <br>
+Use when a user asks to build, optimize, backtest, rebalance, or analyze a stock portfolio with Mean-CVaR, Mean-Variance/SOCP variance caps, efficient frontiers, scenario generation, or NVIDIA cuOpt. <br>
 
 This skill is ready for commercial/non-commercial use. <br>
 
@@ -9,7 +9,7 @@ NVIDIA <br>
 ### License/Terms of Use: <br>
 Apache 2.0 <br>
 ## Use Case: <br>
-Developers and quantitative engineers who need to build, optimize, backtest, rebalance, or analyze stock portfolios using GPU-accelerated Mean-CVaR optimization with NVIDIA cuOpt. <br>
+Developers and quantitative engineers who need to build, optimize, backtest, rebalance, or analyze stock portfolios using GPU-accelerated Mean-CVaR and Mean-Variance/SOCP variance-cap optimization with NVIDIA cuOpt. <br>
 
 ### Deployment Geography for Use: <br>
 Global <br>

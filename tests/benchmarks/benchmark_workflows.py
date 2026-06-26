@@ -39,17 +39,26 @@ import cvxpy as cp
 import numpy as np
 import pandas as pd
 
-from cufolio import backtest, cvar_optimizer, cvar_utils, rebalance, utils
+from cufolio import (
+    backtest,
+    cvar_optimizer,
+    cvar_utils,
+    mean_variance_optimizer,
+    rebalance,
+    utils,
+)
 from cufolio.cvar_parameters import CvarParameters
+from cufolio.mean_variance_parameters import MeanVarianceParameters
 from cufolio.portfolio import Portfolio
 from cufolio.settings import (
+    ApiSettings,
     KDESettings,
     ReturnsComputeSettings,
     ScenarioGenerationSettings,
 )
 
-# Canonical solver settings from SKILL.md — verbatim.
-SOLVER_SETTINGS = {"solver": cp.CUOPT, "verbose": False, "solver_method": "PDLP"}
+# Canonical CVaR solver settings from SKILL.md.
+CVAR_SOLVER_SETTINGS = {"solver": cp.CUOPT, "verbose": False, "solver_method": "PDLP"}
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT = os.path.abspath(os.path.join(_HERE, "..", "..", ".."))
@@ -160,6 +169,23 @@ def _full_invested_params() -> CvarParameters:
     )
 
 
+def _variance_cap_from_equal_weight(returns_dict: dict, multiplier: float = 1.05) -> float:
+    covariance = np.asarray(returns_dict["covariance"], dtype=float)
+    weights = np.ones(len(returns_dict["tickers"])) / len(returns_dict["tickers"])
+    return float(weights @ covariance @ weights) * multiplier
+
+
+def _mean_variance_socp_params(returns_dict: dict) -> MeanVarianceParameters:
+    return MeanVarianceParameters(
+        w_min=0.0,
+        w_max=1.0,
+        c_min=0.0,
+        c_max=0.0,
+        L_tar=1.0,
+        var_limit=_variance_cap_from_equal_weight(returns_dict),
+    )
+
+
 def _close(fig) -> None:
     try:
         import matplotlib.pyplot as plt
@@ -178,7 +204,7 @@ def run_build_optimal(returns_dict: dict) -> tuple[dict, Portfolio]:
     optimizer = cvar_optimizer.CVaR(returns_dict, params)
     start = time.time()
     result, portfolio = optimizer.solve_optimization_problem(
-        solver_settings=SOLVER_SETTINGS, print_results=False
+        solver_settings=CVAR_SOLVER_SETTINGS, print_results=False
     )
     elapsed = time.time() - start
     weights = np.asarray(portfolio.weights, dtype=float).flatten()
@@ -196,12 +222,39 @@ def run_build_optimal(returns_dict: dict) -> tuple[dict, Portfolio]:
     return metrics, portfolio
 
 
+def run_socp_variance_limit(returns_dict: dict) -> dict:
+    """SKILL.md: solve a Mean-Variance SOCP via direct cuOpt variance cap."""
+    params = _mean_variance_socp_params(returns_dict)
+    optimizer = mean_variance_optimizer.MeanVariance(
+        returns_dict,
+        params,
+        api_settings=ApiSettings(api="cuopt_python"),
+    )
+    start = time.time()
+    result, portfolio = optimizer.solve_optimization_problem(print_results=False)
+    elapsed = time.time() - start
+    weights = np.asarray(portfolio.weights, dtype=float).flatten()
+    cash = float(np.asarray(portfolio.cash).squeeze())
+    realized_variance = float(weights @ returns_dict["covariance"] @ weights)
+    return {
+        "expected_return": float(result["return"]),
+        "variance": realized_variance,
+        "variance_limit": float(params.var_limit),
+        "cash_weight": cash,
+        "weight_sum": float(weights.sum() + cash),
+        "n_positions": int(np.sum(np.abs(weights) > 1e-4)),
+        "solver": str(result["solver"]),
+        "solve_seconds": float(result.get("solve time", elapsed)),
+        "problem_type": "SOCP/QCQP",
+    }
+
+
 def run_efficient_frontier(returns_dict: dict, ra_num: int = 25) -> dict:
     """SKILL.md: efficient frontier (results_df carries metrics + per-asset weights)."""
     results_df, fig, _ = cvar_utils.create_efficient_frontier(
         returns_dict,
         _full_invested_params(),
-        SOLVER_SETTINGS,
+        CVAR_SOLVER_SETTINGS,
         ra_num=ra_num,
         min_risk_aversion=-3,
         max_risk_aversion=1,
@@ -224,7 +277,7 @@ def run_weights_table(returns_dict: dict, n_steps: int = 12) -> dict:
     results_df, fig, _ = cvar_utils.create_efficient_frontier(
         returns_dict,
         _full_invested_params(),
-        SOLVER_SETTINGS,
+        CVAR_SOLVER_SETTINGS,
         ra_num=n_steps,
         min_risk_aversion=-3,
         max_risk_aversion=1,
@@ -299,7 +352,7 @@ def run_rebalance(prices: pd.DataFrame) -> dict:
             look_forward_window=look_forward,
             look_back_window=look_back,
             cvar_params=_full_invested_params(),
-            solver_settings=SOLVER_SETTINGS,
+            solver_settings=CVAR_SOLVER_SETTINGS,
             re_optimize_criteria={
                 "type": "drift_from_optimal",
                 "threshold": 0,
@@ -350,6 +403,35 @@ def check_build_optimal(m: dict, th: dict) -> list[str]:
         fails.append(f"solver was {m['solver']!r}, not cuOpt")
     if m["solve_seconds"] > th["solve_seconds_max"]:
         fails.append(f"solve took {m['solve_seconds']:.2f}s")
+    return fails
+
+
+def check_socp_variance_limit(m: dict, th: dict) -> list[str]:
+    fails = []
+    if abs(m["weight_sum"] - 1.0) > th["weight_sum_tol"]:
+        fails.append(
+            "weights+cash sum to {:.6f}, not about 1".format(m["weight_sum"])
+        )
+    if m["cash_weight"] > th["cash_weight_max"]:
+        fails.append(
+            "cash is {:.6f}, expected fully invested".format(m["cash_weight"])
+        )
+    if m["variance"] > m["variance_limit"] + th["variance_limit_tol"]:
+        fails.append(
+            "variance {:.8f} exceeded cap {:.8f}".format(
+                m["variance"], m["variance_limit"]
+            )
+        )
+    if m["n_positions"] < th["min_positions"]:
+        fails.append("only {} position(s)".format(m["n_positions"]))
+    if th["solver_contains"] not in m["solver"].lower():
+        fails.append("solver was {!r}, not cuOpt".format(m["solver"]))
+    if th["problem_type_contains"] not in m["problem_type"].lower():
+        fails.append(
+            "problem type was {!r}, not SOCP/QCQP".format(m["problem_type"])
+        )
+    if m["solve_seconds"] > th["solve_seconds_max"]:
+        fails.append("solve took {:.2f}s".format(m["solve_seconds"]))
     return fails
 
 
@@ -413,6 +495,7 @@ def run_all(full: bool = False, csv_path: str | None = None) -> dict:
     build_metrics, portfolio = run_build_optimal(returns_dict)
     return {
         "build_optimal": build_metrics,
+        "socp_variance_limit": run_socp_variance_limit(returns_dict),
         "efficient_frontier": run_efficient_frontier(returns_dict),
         "weights_table": run_weights_table(returns_dict, n_steps=25 if full else 12),
         "backtest": run_backtest(returns_dict, portfolio),
@@ -422,6 +505,7 @@ def run_all(full: bool = False, csv_path: str | None = None) -> dict:
 
 _CHECKERS = {
     "build_optimal": check_build_optimal,
+    "socp_variance_limit": check_socp_variance_limit,
     "efficient_frontier": check_efficient_frontier,
     "weights_table": check_weights_table,
     "backtest": check_backtest,
