@@ -3,6 +3,22 @@
 All notable changes to this project are documented here, one PR per entry,
 newest first, dated by merge to `main`. Backfilled from git history.
 
+## 2026-07-02 — PR #54
+
+Clarify daily return units and add a GPU-vs-CPU composition comparison in
+`notebooks/mean_variance_basic.ipynb`.
+
+- Added a units note and per-statistic labels: all figures derive from 1-day
+  LOG returns and are daily, not annualized; added an annualized block
+  (×252 log return, exponential conversion to simple return, √252 scaling for
+  volatility/Sharpe).
+- Added a portfolio-composition comparison cell (direct cuOpt vs CVXPY-cuOpt
+  vs CLARABEL weights side by side with per-weight differences), complementing
+  the metrics-only `compare_results`.
+- Renamed the CVXPY-API solve results to `cvxpy_gpu_*` so the direct cuOpt
+  solve no longer shadows them.
+- Notebook re-executed end-to-end on GPU (cuOpt 26.06, fresh S&P 500 snapshot).
+
 ## 2026-06-26 — PR #50
 
 Add cuOpt SOCP variance-cap support to the Mean-Variance optimizer.
