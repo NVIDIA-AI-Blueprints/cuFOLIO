@@ -21,6 +21,7 @@ from .base_parameters import BaseParameters
 from .cvar_data import CvarData
 from .cvar_parameters import CvarParameters
 from .mean_variance_parameters import MeanVarianceParameters
+from .fxmacrodata import load_fxmacrodata_calendar
 from .settings import (
     ApiSettings,
     KDESettings,
@@ -33,6 +34,7 @@ __all__ = [
     "CvarData",
     "CvarParameters",
     "MeanVarianceParameters",
+    "load_fxmacrodata_calendar",
     "ApiSettings",
     "KDESettings",
     "ReturnsComputeSettings",
