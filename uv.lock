@@ -655,7 +655,7 @@ wheels = [
 
 [[package]]
 name = "cufolio"
-version = "25.10"
+version = "26.4"
 source = { editable = "." }
 dependencies = [
     { name = "cvxpy" },
