@@ -3,7 +3,7 @@
 All notable changes to this project are documented here, one PR per entry,
 newest first, dated by merge to `main`. Backfilled from git history.
 
-## 2026-07-02 — PR #54
+## 2026-07-03 — PR #54
 
 Clarify daily return units and add a GPU-vs-CPU composition comparison in
 `notebooks/mean_variance_basic.ipynb`.
@@ -18,6 +18,16 @@ Clarify daily return units and add a GPU-vs-CPU composition comparison in
 - Renamed the CVXPY-API solve results to `cvxpy_gpu_*` so the direct cuOpt
   solve no longer shadows them.
 - Notebook re-executed end-to-end on GPU (cuOpt 26.06, fresh S&P 500 snapshot).
+
+## 2026-06-26 — PR #52
+
+Reconcile the project and package version strings.
+
+- Set `pyproject` `[project].version` and `src/__init__.py` `version`
+  (exported as `cufolio.version`) both to `26.4`, replacing the disagreeing
+  `25.10` / `1.0.0` and aligning with the cuOpt 26.4 release line and the
+  `cuopt-cu13==26.4.*` dependency-pin style.
+- Regenerated `uv.lock`.
 
 ## 2026-06-26 — PR #50
 
