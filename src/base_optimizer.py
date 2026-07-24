@@ -309,8 +309,26 @@ class BaseOptimizer:
         result_row : pd.Series
         weights : np.ndarray
         cash : float
+
+        Raises
+        ------
+        RuntimeError
+            If the solver terminates without producing a feasible incumbent
+            (e.g., a time limit was hit before an incumbent was found).
         """
         self.optimization_problem.solve(**solver_settings)
+
+        # Guards against solves that hit a resource limit (e.g., a time limit)
+        # before finding any feasible incumbent. Without this check,
+        # execution will continue and fail later on with a TypeError in
+        # _get_cvxpy_risk_metric_value. self.w.value is used specifically since,
+        # if the weights do not exist, then the portfolio itself does not exist.
+        if self.w.value is None:
+            raise RuntimeError(
+                "Optimization did not produce a valid portfolio allocation. "
+                f"CVXPY status: {self.optimization_problem.status}"
+            )
+
         weights = self.w.value
         cash = self.c.value
 
