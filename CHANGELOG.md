@@ -19,6 +19,22 @@ limit before finding a feasible incumbent.
   as a `TypeError` in `_get_cvxpy_risk_metric_value`; this new check
   catches it earlier and provides the `cvxpy` solver status for debugging.
 
+## 2026-07-03 — PR #54
+
+Clarify daily return units and add a GPU-vs-CPU composition comparison in
+`notebooks/mean_variance_basic.ipynb`.
+
+- Added a units note and per-statistic labels: all figures derive from 1-day
+  LOG returns and are daily, not annualized; added an annualized block
+  (×252 log return, exponential conversion to simple return, √252 scaling for
+  volatility/Sharpe).
+- Added a portfolio-composition comparison cell (direct cuOpt vs CVXPY-cuOpt
+  vs CLARABEL weights side by side with per-weight differences), complementing
+  the metrics-only `compare_results`.
+- Renamed the CVXPY-API solve results to `cvxpy_gpu_*` so the direct cuOpt
+  solve no longer shadows them.
+- Notebook re-executed end-to-end on GPU (cuOpt 26.06, fresh S&P 500 snapshot).
+
 ## 2026-06-26 — PR #52
 
 Reconcile the project and package version strings.
