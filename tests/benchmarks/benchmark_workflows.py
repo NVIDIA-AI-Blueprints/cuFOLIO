@@ -7,7 +7,7 @@
 #
 # http://www.apache.org/licenses/LICENSE-2.0
 
-"""Layer 3 skill-performance benchmarks for the cufolio skill.
+"""Layer 3 skill-performance benchmarks for the portfolio optimization skill.
 
 Each ``run_*`` function executes one documented SKILL.md workflow end-to-end on a
 GPU (cuOpt), exactly as the skill instructs an agent to write it — so this module
@@ -22,7 +22,7 @@ Run as a script for a report::
 
 or as a pytest gate (auto-skips off-GPU): ``uv run pytest -m gpu``.
 
-Requires the ``cufolio`` package with NVIDIA cuOpt + cuML installed (e.g. the Brev
+Requires the ``portfolio_optimization`` package with NVIDIA cuOpt + cuML installed (e.g. the Brev
 launchable or ``uv sync --extra cuda12``), and network access on first run to
 download price data. The CLI exits cleanly with a SKIP message when the GPU runtime is absent.
 """
@@ -39,7 +39,7 @@ import cvxpy as cp
 import numpy as np
 import pandas as pd
 
-from cufolio import (
+from portfolio_optimization import (
     backtest,
     cvar_optimizer,
     cvar_utils,
@@ -47,10 +47,10 @@ from cufolio import (
     rebalance,
     utils,
 )
-from cufolio.cvar_parameters import CvarParameters
-from cufolio.mean_variance_parameters import MeanVarianceParameters
-from cufolio.portfolio import Portfolio
-from cufolio.settings import (
+from portfolio_optimization.cvar_parameters import CvarParameters
+from portfolio_optimization.mean_variance_parameters import MeanVarianceParameters
+from portfolio_optimization.portfolio import Portfolio
+from portfolio_optimization.settings import (
     ApiSettings,
     KDESettings,
     ReturnsComputeSettings,
@@ -117,7 +117,7 @@ def resolve_csv_path(csv_path: str | None = None, allow_download: bool = True) -
             return sp500
     raise DataUnavailable(
         "no price CSV found; pass --csv or run "
-        "cufolio.utils.download_data('data/stock_data', datasets=['sp500']) first"
+        "portfolio_optimization.utils.download_data('data/stock_data', datasets=['sp500']) first"
     )
 
 
@@ -538,7 +538,7 @@ def main() -> int:
 
     gpu_ok, reason = gpu_runtime_available()
     if not gpu_ok:
-        print(f"SKIP cuFOLIO GPU benchmark workflows: {reason}")
+        print(f"SKIP cuOpt portfolio-optimization GPU benchmark workflows: {reason}")
         return 0
 
     results = run_all(full=args.full, csv_path=args.csv)

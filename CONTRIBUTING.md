@@ -1,6 +1,6 @@
-# Contributing to NVIDIA Quantitative Portfolio Optimization developer example
+# Contributing to the Portfolio Optimization Developer Example
 
-Thank you for your interest in contributing to Quantitative Portfolio Optimization developer example! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to the portfolio optimization developer example powered by NVIDIA cuOpt! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ## Ways to Contribute
 
-There are many ways to contribute to Quantitative Portfolio Optimization developer example:
+There are many ways to contribute to the portfolio optimization developer example:
 
 - **Report bugs**: If you find a bug, please open an issue with detailed information
 - **Suggest enhancements**: Have an idea for a new feature? Let us know!
@@ -40,8 +40,8 @@ There are many ways to contribute to Quantitative Portfolio Optimization develop
 1. **Fork and Clone the Repository**
 
    ```bash
-   git clone https://github.com/your-username/cufolio.git
-   cd cufolio
+   git clone https://github.com/your-username/portfolio-optimization.git
+   cd portfolio-optimization
    ```
 
 2. **Install uv (if not already installed)**
@@ -289,7 +289,7 @@ What actually happened.
 - Python: [e.g., 3.11]
 - CUDA: [e.g., 12.2]
 - GPU: [e.g., A100]
-- NVIDIA Quantitative Portfolio Optimization developer example version: [e.g., 25.10]
+- Portfolio optimization developer example version: [e.g., 25.10]
 
 **Additional Context**
 Any other relevant information.

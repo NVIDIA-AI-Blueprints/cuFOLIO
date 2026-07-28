@@ -1,5 +1,5 @@
 {
-  "name": "nvidia-cufolio-skills",
+  "name": "nvidia-portfolio-optimization-skills",
   "owner": {
     "name": "NVIDIA"
   },
@@ -9,8 +9,8 @@
   },
   "plugins": [
     {
-      "name": "cufolio",
-      "source": "./skills/cufolio",
+      "name": "portfolio-optimization",
+      "source": "./skills/portfolio-optimization",
       "skills": "./",
       "description": "GPU-accelerated Mean-CVaR portfolio optimization with NVIDIA cuOpt — CVaR optimization, efficient frontier, scenario generation, backtesting, and rebalancing."
     }

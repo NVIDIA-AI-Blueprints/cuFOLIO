@@ -1,4 +1,4 @@
-# Quantitative Portfolio Optimization developer example
+# Portfolio Optimization Powered by NVIDIA cuOpt
 
 ## Disclaimer
 This project will download and install additional third-party open source software projects. Review the license terms of these open source projects before use.
@@ -7,7 +7,7 @@ This project will download and install additional third-party open source softwa
 
 ## Overview
 
-This developer example addresses the financial industry's trade-off between **computational speed** and **model complexity** in portfolio optimization. By leveraging **NVIDIA accelerated computing**, this solution transforms robust analysis (e.g., Mean-CVaR, large-scale simulations) from slow batch processing into a **fast, iterative workflow** for dynamic decision-making.
+This portfolio optimization developer example addresses the financial industry's trade-off between **computational speed** and **model complexity** in portfolio optimization. By leveraging **NVIDIA accelerated computing**, this solution transforms robust analysis (e.g., Mean-CVaR, large-scale simulations) from slow batch processing into a **fast, iterative workflow** for dynamic decision-making.
 
 ### Accelerated Architecture
 
@@ -84,8 +84,8 @@ docker run --gpus all -it --rm \
   nvcr.io/nvidia/pytorch:25.10-py3
 
 # Clone the repository
-git clone https://github.com/NVIDIA-AI-Blueprints/cuFOLIO.git
-cd cuFOLIO
+git clone https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization.git
+cd portfolio-optimization
 
 # Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -153,7 +153,7 @@ If you are using the PyTorch Docker container above, make sure it was started wi
 
 ```bash
 uv pip install -r demo/requirements.txt
-uv run python -c "from cufolio.utils import download_data; download_data('data/stock_data', datasets=['sp500'])"
+uv run python -c "from portfolio_optimization.utils import download_data; download_data('data/stock_data', datasets=['sp500'])"
 uv run streamlit run demo/rebalancing_streamlit_app.py --server.address 0.0.0.0 --server.port 8501
 ```
 
@@ -182,8 +182,8 @@ We welcome contributions to this project! Please see [CONTRIBUTING.md](CONTRIBUT
 ## Community
 
 For questions, discussions, and community support:
-- **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/NVIDIA-AI-Blueprints/cuFOLIO/issues)
-- **Discussions**: Join conversations in [GitHub Discussions](https://github.com/NVIDIA-AI-Blueprints/cuFOLIO/discussions)
+- **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/issues)
+- **Discussions**: Join conversations in [GitHub Discussions](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/discussions)
 
 ---
 ## References

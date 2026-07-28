@@ -1,8 +1,8 @@
-# Reference cuFOLIO workflows for agent tasks
+# Reference portfolio optimization workflows for agent tasks
 
 These helpers are intentionally small and direct. They show the API shapes that
 agents should reuse when optimizing, tracing a frontier, backtesting, or running
-monthly rebalancing with cuFOLIO. Copy the relevant function(s) and adapt only the
+monthly rebalancing with the `portfolio_optimization` package. Copy the relevant function(s) and adapt only the
 requested output — do not reimplement the package.
 
 ## Imports and dataset
@@ -17,7 +17,7 @@ import cvxpy as cp
 import numpy as np
 import pandas as pd
 
-from cufolio import (
+from portfolio_optimization import (
     backtest,
     cvar_optimizer,
     cvar_utils,
@@ -25,10 +25,10 @@ from cufolio import (
     rebalance,
     utils,
 )
-from cufolio.cvar_parameters import CvarParameters
-from cufolio.mean_variance_parameters import MeanVarianceParameters
-from cufolio.portfolio import Portfolio
-from cufolio.settings import (
+from portfolio_optimization.cvar_parameters import CvarParameters
+from portfolio_optimization.mean_variance_parameters import MeanVarianceParameters
+from portfolio_optimization.portfolio import Portfolio
+from portfolio_optimization.settings import (
     ApiSettings,
     KDESettings,
     ReturnsComputeSettings,
@@ -46,7 +46,7 @@ def require_cuopt_solver() -> dict:
     if not hasattr(cp, "CUOPT"):
         raise RuntimeError(
             "cuOpt is required for this skill, but cvxpy does not expose cp.CUOPT. "
-            "Install the CUDA/cuOpt-enabled cuFOLIO environment."
+            "Install the project environment with CUDA and NVIDIA cuOpt."
         )
 
     installed = {str(solver) for solver in cp.installed_solvers()}
@@ -67,7 +67,7 @@ def require_cuopt_python_api() -> dict:
     if importlib.util.find_spec("cuopt") is None:
         raise RuntimeError(
             "cuOpt is required for Mean-Variance QP/SOCP workflows. "
-            "Install the CUDA/cuOpt-enabled cuFOLIO environment and do not "
+            "Install the project environment with CUDA and NVIDIA cuOpt; do not "
             "substitute a CPU solver."
         )
     return {}
@@ -301,7 +301,7 @@ def rebalance_monthly(
     prices: pd.DataFrame,
     *,
     solver_settings: dict | None = None,
-    csv_path: str = "/tmp/cufolio_rebalance_prices.csv",
+    csv_path: str = "/tmp/portfolio_optimization_rebalance_prices.csv",
     look_back_window: int = 126,
     look_forward_window: int = 21,
 ) -> tuple[pd.DataFrame, list, pd.Series]:

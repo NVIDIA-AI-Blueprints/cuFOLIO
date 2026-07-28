@@ -68,18 +68,18 @@ except RuntimeError:
 # Global lock for matplotlib operations to prevent thread conflicts
 _matplotlib_lock = threading.Lock()
 
-# Add workspace root to path for imports (package structure: cufolio = "src")
+# Add workspace root to path for imports (package structure: portfolio_optimization = "src")
 script_dir = Path(__file__).parent.absolute()
 workspace_root = script_dir.parent  # This is the workspace root
 sys.path.insert(0, str(workspace_root))
 cvar_dir = workspace_root  # For backward compatibility with path references
 
 try:
-    # Import cufolio package
+    # Import portfolio_optimization package
     import cvxpy as cp
-    from cufolio import backtest, cvar_optimizer, cvar_utils, rebalance, utils
-    from cufolio.cvar_parameters import CvarParameters
-    from cufolio.settings import (
+    from portfolio_optimization import backtest, cvar_optimizer, cvar_utils, rebalance, utils
+    from portfolio_optimization.cvar_parameters import CvarParameters
+    from portfolio_optimization.settings import (
         KDESettings,
         ReturnsComputeSettings,
         ScenarioGenerationSettings,
@@ -98,7 +98,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
     menu_items={
         "About": (
-            "**cuFOLIO — Backtesting Rebalancing Strategies**\n\n"
+            "**Portfolio Optimization Powered by NVIDIA cuOpt — Backtesting Rebalancing Strategies**\n\n"
             "Toggle name masking by adding `?mask=false` to the URL "
             "to show real dataset and ticker names, or `?mask=true` to hide them."
         ),
@@ -843,7 +843,7 @@ def create_rebalancing_progressive(
             }
         )
 
-        # Main loop (adapted from cufolio/rebalance.py)
+        # Main loop (adapted from portfolio_optimization/rebalance.py)
         metric_column = r.re_optimize_type
         results_df = pd.DataFrame(
             columns=[metric_column, "re_optimized", "portfolio_value", "max_drawdown"]
@@ -1381,9 +1381,9 @@ def create_rebalancing_cpu_worker(
         _workspace_root = _script_dir.parent
         sys.path.insert(0, str(_workspace_root))
 
-        from cufolio import backtest, cvar_optimizer, cvar_utils, rebalance, utils
-        from cufolio.cvar_parameters import CvarParameters
-        from cufolio.settings import ReturnsComputeSettings, ScenarioGenerationSettings
+        from portfolio_optimization import backtest, cvar_optimizer, cvar_utils, rebalance, utils
+        from portfolio_optimization.cvar_parameters import CvarParameters
+        from portfolio_optimization.settings import ReturnsComputeSettings, ScenarioGenerationSettings
 
         # Reconstruct Pydantic objects from dicts
         _returns_compute_settings = ReturnsComputeSettings(
@@ -2555,7 +2555,7 @@ def main():
     # Header (placed in a placeholder so it can be collapsed when the demo runs)
     header_placeholder = st.empty()
     header_placeholder.markdown(
-        '<div class="main-header">cuFOLIO - Unlocking Real-Time Backtesting</div>',
+        '<div class="main-header">Portfolio Optimization Powered by NVIDIA cuOpt — Unlocking Real-Time Backtesting</div>',
         unsafe_allow_html=True,
     )
 
@@ -2939,7 +2939,7 @@ def main():
             "one-time effort — the speedup cuOpt delivers on a single solve is "
             "**magnified across hundreds of iterations**. More sophisticated "
             "strategies with additional hyperparameters demand even more "
-            "iterations, making GPU acceleration essential: the cuFOLIO pipeline "
+            "iterations, making GPU acceleration essential: the portfolio optimization pipeline "
             "completes in **minutes instead of hours**."
         )
         st.caption(

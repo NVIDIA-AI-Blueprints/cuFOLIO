@@ -1,13 +1,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
-# Standards for the cufolio skill performance benchmarks (Layer 3).
+# Standards for the portfolio optimization skill performance benchmarks (Layer 3).
 #
 # Each table lists the quantitative pass criteria a documented SKILL.md workflow
 # must meet when run end-to-end on a GPU (see benchmark_workflows.py and
 # tests/test_skill_benchmarks.py). These are the explicit, tunable definition of
 # "the skill is performing up to standard." Loosen a bound here rather than
-# silencing a failing test -- a failure usually means the product drifted away
+# silencing a failing test -- a failure usually means the implementation drifted away
 # from what SKILL.md promises (e.g. a Trap regressed). Parsed with stdlib tomllib.
 
 [build_optimal]

@@ -6,14 +6,14 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 conflicts = [[
-    { package = "cufolio", extra = "cuda12" },
-    { package = "cufolio", extra = "cuda13" },
+    { package = "portfolio-optimization", extra = "cuda12" },
+    { package = "portfolio-optimization", extra = "cuda13" },
 ], [
-    { package = "cufolio", extra = "cuda12" },
-    { package = "cufolio", extra = "cuda13-socp" },
+    { package = "portfolio-optimization", extra = "cuda12" },
+    { package = "portfolio-optimization", extra = "cuda13-socp" },
 ], [
-    { package = "cufolio", extra = "cuda13" },
-    { package = "cufolio", extra = "cuda13-socp" },
+    { package = "portfolio-optimization", extra = "cuda13" },
+    { package = "portfolio-optimization", extra = "cuda13-socp" },
 ]]
 
 [[package]]
@@ -79,7 +79,7 @@ name = "cffi"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp') or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp') or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/56/b1ba7935a17738ae8453301356628e8147c79dbb825bcbc73dc7401f9846/cffi-2.0.0.tar.gz", hash = "sha256:44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529", size = 523588, upload-time = "2025-09-08T23:24:04.541Z" }
 wheels = [
@@ -353,7 +353,7 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 dependencies = [
-    { name = "cuda-pathfinder", marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-pathfinder", marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a9/2b/ebcbb60aa6dba830474cd360c42e10282f7a343c0a1f58d24fbd3b7c2d77/cuda_bindings-12.9.4-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a6a429dc6c13148ff1e27c44f40a3dd23203823e637b87fd0854205195988306", size = 11840604, upload-time = "2025-10-21T14:51:34.565Z" },
@@ -385,7 +385,7 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 dependencies = [
-    { name = "cuda-pathfinder", marker = "extra == 'extra-7-cufolio-cuda13' or extra == 'extra-7-cufolio-cuda13-socp' or extra != 'extra-7-cufolio-cuda12'" },
+    { name = "cuda-pathfinder", marker = "extra == 'extra-7-portfolio-optimization-cuda13' or extra == 'extra-7-portfolio-optimization-cuda13-socp' or extra != 'extra-7-portfolio-optimization-cuda12'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dc/67/9e171ee6359d4aabf2d8202802c85487cae6c2eb52b9352bb7754583802f/cuda_bindings-13.0.3-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dfd66c25a133365c4f93e3396c38c64b04400ccafd18c3a889ae251a1bfabaa1", size = 11807212, upload-time = "2025-10-21T15:08:52.988Z" },
@@ -571,12 +571,12 @@ source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
     { name = "cachetools" },
     { name = "cuda-python", version = "12.9.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["nvcc", "nvrtc"], marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["nvcc", "nvrtc"], marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "cupy-cuda12x" },
     { name = "fsspec" },
     { name = "libcudf-cu12" },
     { name = "numba" },
-    { name = "numba-cuda", extra = ["cu12"], marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "numba-cuda", extra = ["cu12"], marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "numpy" },
     { name = "nvtx" },
     { name = "packaging" },
@@ -602,12 +602,12 @@ resolution-markers = [
 dependencies = [
     { name = "cachetools" },
     { name = "cuda-python", version = "13.0.3", source = { registry = "https://pypi.org/simple" } },
-    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["nvcc", "nvrtc"], marker = "extra == 'extra-7-cufolio-cuda13' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["nvcc", "nvrtc"], marker = "extra == 'extra-7-portfolio-optimization-cuda13' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "cupy-cuda13x" },
     { name = "fsspec" },
     { name = "libcudf-cu13", version = "26.4.0", source = { registry = "https://pypi.nvidia.com/" } },
     { name = "numba" },
-    { name = "numba-cuda", extra = ["cu13"], marker = "extra == 'extra-7-cufolio-cuda13' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "numba-cuda", extra = ["cu13"], marker = "extra == 'extra-7-portfolio-optimization-cuda13' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "numpy" },
     { name = "nvtx" },
     { name = "packaging" },
@@ -633,12 +633,12 @@ resolution-markers = [
 dependencies = [
     { name = "cachetools" },
     { name = "cuda-python", version = "13.0.3", source = { registry = "https://pypi.org/simple" } },
-    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["nvcc", "nvrtc"], marker = "extra == 'extra-7-cufolio-cuda13-socp' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (extra != 'extra-7-cufolio-cuda12' and extra != 'extra-7-cufolio-cuda13')" },
+    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["nvcc", "nvrtc"], marker = "extra == 'extra-7-portfolio-optimization-cuda13-socp' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (extra != 'extra-7-portfolio-optimization-cuda12' and extra != 'extra-7-portfolio-optimization-cuda13')" },
     { name = "cupy-cuda13x" },
     { name = "fsspec" },
     { name = "libcudf-cu13", version = "26.6.0", source = { registry = "https://pypi.nvidia.com/" } },
     { name = "numba" },
-    { name = "numba-cuda", extra = ["cu13"], marker = "extra == 'extra-7-cufolio-cuda13-socp' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (extra != 'extra-7-cufolio-cuda12' and extra != 'extra-7-cufolio-cuda13')" },
+    { name = "numba-cuda", extra = ["cu13"], marker = "extra == 'extra-7-portfolio-optimization-cuda13-socp' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (extra != 'extra-7-portfolio-optimization-cuda12' and extra != 'extra-7-portfolio-optimization-cuda13')" },
     { name = "numpy" },
     { name = "nvtx" },
     { name = "packaging" },
@@ -654,7 +654,7 @@ wheels = [
 ]
 
 [[package]]
-name = "cufolio"
+name = "portfolio-optimization"
 version = "26.4"
 source = { editable = "." }
 dependencies = [
@@ -719,13 +719,13 @@ version = "26.6.0"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
     { name = "cuda-python", version = "12.9.4", source = { registry = "https://pypi.org/simple" } },
-    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cufft", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cufft", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "cudf-cu12" },
     { name = "cupy-cuda12x" },
     { name = "joblib" },
     { name = "libcuml-cu12" },
     { name = "numba" },
-    { name = "numba-cuda", extra = ["cu12"], marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "numba-cuda", extra = ["cu12"], marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "numpy" },
     { name = "nvforest-cu12" },
     { name = "nvidia-nvjitlink-cu12" },
@@ -748,13 +748,13 @@ version = "26.4.0"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
     { name = "cuda-python", version = "13.0.3", source = { registry = "https://pypi.org/simple" } },
-    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cufft", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-cufolio-cuda13' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cufft", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-portfolio-optimization-cuda13' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "cudf-cu13", version = "26.4.0", source = { registry = "https://pypi.nvidia.com/" } },
     { name = "cupy-cuda13x" },
     { name = "joblib" },
     { name = "libcuml-cu13" },
     { name = "numba" },
-    { name = "numba-cuda", extra = ["cu13"], marker = "extra == 'extra-7-cufolio-cuda13' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "numba-cuda", extra = ["cu13"], marker = "extra == 'extra-7-portfolio-optimization-cuda13' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "numpy" },
     { name = "nvidia-nvjitlink" },
     { name = "packaging" },
@@ -1239,7 +1239,7 @@ name = "ipykernel"
 version = "7.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "appnope", marker = "sys_platform == 'darwin' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp') or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "appnope", marker = "sys_platform == 'darwin' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp') or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "comm" },
     { name = "debugpy" },
     { name = "ipython" },
@@ -1263,17 +1263,17 @@ name = "ipython"
 version = "9.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp') or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp') or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "decorator" },
     { name = "ipython-pygments-lexers" },
     { name = "jedi" },
     { name = "matplotlib-inline" },
-    { name = "pexpect", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32') or (sys_platform == 'emscripten' and extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (sys_platform == 'emscripten' and extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp') or (sys_platform == 'emscripten' and extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp') or (sys_platform == 'win32' and extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (sys_platform == 'win32' and extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp') or (sys_platform == 'win32' and extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "pexpect", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32') or (sys_platform == 'emscripten' and extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (sys_platform == 'emscripten' and extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp') or (sys_platform == 'emscripten' and extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp') or (sys_platform == 'win32' and extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (sys_platform == 'win32' and extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp') or (sys_platform == 'win32' and extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "prompt-toolkit" },
     { name = "pygments" },
     { name = "stack-data" },
     { name = "traitlets" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp') or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp') or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/29/e6/48c74d54039241a456add616464ea28c6ebf782e4110d419411b83dae06f/ipython-9.7.0.tar.gz", hash = "sha256:5f6de88c905a566c6a9d6c400a8fed54a638e1f7543d17aae2551133216b1e4e", size = 4422115, upload-time = "2025-11-05T12:18:54.646Z" }
 wheels = [
@@ -1502,7 +1502,7 @@ name = "libcuml-cu12"
 version = "26.6.0"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cufft", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cufft", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "libnvforest-cu12" },
     { name = "libraft-cu12" },
     { name = "librmm-cu12" },
@@ -1519,7 +1519,7 @@ name = "libcuml-cu13"
 version = "26.4.0"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cufft", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-cufolio-cuda13' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cufft", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-portfolio-optimization-cuda13' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "libraft-cu13", version = "26.4.0", source = { registry = "https://pypi.nvidia.com/" } },
     { name = "nvidia-nvjitlink" },
     { name = "rapids-logger" },
@@ -1534,7 +1534,7 @@ name = "libcuopt-cu12"
 version = "26.6.0"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cudart", "curand", "cusolver", "cusparse", "nvtx"], marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cudart", "curand", "cusolver", "cusparse", "nvtx"], marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "librmm-cu12" },
     { name = "nvidia-cudss-cu12" },
     { name = "nvidia-nvjitlink-cu12" },
@@ -1554,7 +1554,7 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 dependencies = [
-    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cudart", "curand", "cusolver", "cusparse", "nvtx"], marker = "extra == 'extra-7-cufolio-cuda13' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cudart", "curand", "cusolver", "cusparse", "nvtx"], marker = "extra == 'extra-7-portfolio-optimization-cuda13' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "cuopt-mps-parser" },
     { name = "librmm-cu13", version = "26.4.0", source = { registry = "https://pypi.nvidia.com/" } },
     { name = "nvidia-cudss-cu13" },
@@ -1575,7 +1575,7 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 dependencies = [
-    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cudart", "curand", "cusolver", "cusparse", "nvtx"], marker = "extra == 'extra-7-cufolio-cuda13-socp' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (extra != 'extra-7-cufolio-cuda12' and extra != 'extra-7-cufolio-cuda13')" },
+    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "cudart", "curand", "cusolver", "cusparse", "nvtx"], marker = "extra == 'extra-7-portfolio-optimization-cuda13-socp' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (extra != 'extra-7-portfolio-optimization-cuda12' and extra != 'extra-7-portfolio-optimization-cuda13')" },
     { name = "librmm-cu13", version = "26.6.0", source = { registry = "https://pypi.nvidia.com/" } },
     { name = "nvidia-cudss-cu13" },
     { name = "nvidia-nvjitlink" },
@@ -1646,7 +1646,7 @@ name = "libraft-cu12"
 version = "26.6.0"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "librmm-cu12" },
     { name = "nvidia-nccl-cu12" },
     { name = "nvidia-nvjitlink-cu12" },
@@ -1666,7 +1666,7 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 dependencies = [
-    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-cufolio-cuda13' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-portfolio-optimization-cuda13' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "librmm-cu13", version = "26.4.0", source = { registry = "https://pypi.nvidia.com/" } },
     { name = "nvidia-nccl-cu13" },
     { name = "nvidia-nvjitlink" },
@@ -1686,7 +1686,7 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 dependencies = [
-    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-cufolio-cuda13-socp' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (extra != 'extra-7-cufolio-cuda12' and extra != 'extra-7-cufolio-cuda13')" },
+    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas", "curand", "cusolver", "cusparse"], marker = "extra == 'extra-7-portfolio-optimization-cuda13-socp' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (extra != 'extra-7-portfolio-optimization-cuda12' and extra != 'extra-7-portfolio-optimization-cuda13')" },
     { name = "librmm-cu13", version = "26.6.0", source = { registry = "https://pypi.nvidia.com/" } },
     { name = "nvidia-nccl-cu13" },
     { name = "nvidia-nvjitlink" },
@@ -1991,8 +1991,8 @@ name = "numba-cuda"
 version = "0.28.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cuda-bindings", version = "12.9.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
-    { name = "cuda-bindings", version = "13.0.3", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-7-cufolio-cuda13' or extra == 'extra-7-cufolio-cuda13-socp' or extra != 'extra-7-cufolio-cuda12'" },
+    { name = "cuda-bindings", version = "12.9.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
+    { name = "cuda-bindings", version = "13.0.3", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-7-portfolio-optimization-cuda13' or extra == 'extra-7-portfolio-optimization-cuda13-socp' or extra != 'extra-7-portfolio-optimization-cuda12'" },
     { name = "cuda-core" },
     { name = "numba" },
     { name = "packaging" },
@@ -2016,13 +2016,13 @@ wheels = [
 cu12 = [
     { name = "cuda-bindings", version = "12.9.4", source = { registry = "https://pypi.org/simple" } },
     { name = "cuda-pathfinder" },
-    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cccl", "cudart", "nvcc", "nvrtc"], marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cccl", "cudart", "nvcc", "nvrtc"], marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "nvidia-nvjitlink-cu12" },
 ]
 cu13 = [
     { name = "cuda-bindings", version = "13.0.3", source = { registry = "https://pypi.org/simple" } },
     { name = "cuda-pathfinder" },
-    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cccl", "cudart", "nvrtc", "nvvm"], marker = "extra == 'extra-7-cufolio-cuda13' or extra == 'extra-7-cufolio-cuda13-socp' or extra != 'extra-7-cufolio-cuda12'" },
+    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cccl", "cudart", "nvrtc", "nvvm"], marker = "extra == 'extra-7-portfolio-optimization-cuda13' or extra == 'extra-7-portfolio-optimization-cuda13-socp' or extra != 'extra-7-portfolio-optimization-cuda12'" },
     { name = "nvidia-nvjitlink" },
 ]
 
@@ -2197,7 +2197,7 @@ name = "nvidia-cudss-cu12"
 version = "0.7.1.6"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas"], marker = "extra == 'extra-7-cufolio-cuda12' or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cuda-toolkit", version = "12.9.1", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas"], marker = "extra == 'extra-7-portfolio-optimization-cuda12' or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
 ]
 wheels = [
     { url = "https://pypi.nvidia.com/nvidia-cudss-cu12/nvidia_cudss_cu12-0.7.1.6-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:edf9a0d40463841a18e77e34071747ae7ae3145e0af65c976923a9ac125f97ac" },
@@ -2210,7 +2210,7 @@ name = "nvidia-cudss-cu13"
 version = "0.7.1.6"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas"], marker = "extra == 'extra-7-cufolio-cuda13' or extra == 'extra-7-cufolio-cuda13-socp' or extra != 'extra-7-cufolio-cuda12'" },
+    { name = "cuda-toolkit", version = "13.0.0", source = { registry = "https://pypi.nvidia.com/" }, extra = ["cublas"], marker = "extra == 'extra-7-portfolio-optimization-cuda13' or extra == 'extra-7-portfolio-optimization-cuda13-socp' or extra != 'extra-7-portfolio-optimization-cuda12'" },
 ]
 wheels = [
     { url = "https://pypi.nvidia.com/nvidia-cudss-cu13/nvidia_cudss_cu13-0.7.1.6-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:6fbc8cf61f0ec66d2d7bffad63605f914cae032412b8881ccdc7e89f29088f6d" },
@@ -3047,7 +3047,7 @@ name = "pytest"
 version = "9.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp') or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp') or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
@@ -3139,7 +3139,7 @@ name = "pyzmq"
 version = "27.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "implementation_name == 'pypy' or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13') or (extra == 'extra-7-cufolio-cuda12' and extra == 'extra-7-cufolio-cuda13-socp') or (extra == 'extra-7-cufolio-cuda13' and extra == 'extra-7-cufolio-cuda13-socp')" },
+    { name = "cffi", marker = "implementation_name == 'pypy' or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13') or (extra == 'extra-7-portfolio-optimization-cuda12' and extra == 'extra-7-portfolio-optimization-cuda13-socp') or (extra == 'extra-7-portfolio-optimization-cuda13' and extra == 'extra-7-portfolio-optimization-cuda13-socp')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/04/0b/3c9baedbdf613ecaa7aa07027780b8867f57b6293b6ee50de316c9f3222b/pyzmq-27.1.0.tar.gz", hash = "sha256:ac0765e3d44455adb6ddbf4417dcce460fc40a05978c08efdf2948072f6db540", size = 281750, upload-time = "2025-09-08T23:10:18.157Z" }
 wheels = [
