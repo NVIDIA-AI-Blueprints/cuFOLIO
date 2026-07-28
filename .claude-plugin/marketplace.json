@@ -9,8 +9,8 @@
   },
   "plugins": [
     {
-      "name": "portfolio-optimization",
-      "source": "./skills/portfolio-optimization",
+      "name": "cufolio",
+      "source": "./skills/cufolio",
       "skills": "./",
       "description": "GPU-accelerated Mean-CVaR portfolio optimization with NVIDIA cuOpt — CVaR optimization, efficient frontier, scenario generation, backtesting, and rebalancing."
     }

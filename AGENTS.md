@@ -4,7 +4,7 @@ AI agent skills for NVIDIA-accelerated quantitative portfolio optimization. Skil
 
 ## Skills
 
-- `skills/portfolio-optimization/` — GPU-accelerated **Mean-CVaR portfolio optimization** with NVIDIA cuOpt: optimal portfolio construction, CVaR/mean-CVaR optimization, efficient frontier, KDE/Gaussian scenario generation, backtesting, and dynamic rebalancing. Read `skills/portfolio-optimization/SKILL.md` for the workflow, defaults, and the non-obvious "Traps". Not for generic finance Q&A, price forecasting/ML, or non-portfolio (e.g. routing) optimization.
+- `skills/cufolio/` — GPU-accelerated **Mean-CVaR portfolio optimization** with NVIDIA cuOpt: optimal portfolio construction, CVaR/mean-CVaR optimization, efficient frontier, KDE/Gaussian scenario generation, backtesting, and dynamic rebalancing. Read `skills/cufolio/SKILL.md` for the workflow, defaults, and the non-obvious "Traps". Not for generic finance Q&A, price forecasting/ML, or non-portfolio (e.g. routing) optimization.
 
 ## Notes
 

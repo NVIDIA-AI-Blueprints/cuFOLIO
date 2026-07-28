@@ -14,11 +14,11 @@ import pathlib
 import pytest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-SKILL_DIR = REPO_ROOT / "skills" / "portfolio-optimization"
+SKILL_DIR = REPO_ROOT / "skills" / "cufolio"
 SKILL_MD = SKILL_DIR / "SKILL.md"
 EVALS_JSON = SKILL_DIR / "evals" / "evals.json"
 
-VALID_EXPECTED_SKILLS = {"portfolio-optimization", None}
+VALID_EXPECTED_SKILLS = {"cufolio", None}
 # 'alwaysApply' / 'globs' are rules-only fields; 'usage' is non-standard and is
 # NOT read for skill triggering (only 'description' is) — keep keywords there.
 FORBIDDEN_FRONTMATTER_KEYS = {"usage", "globs", "alwaysApply"}
@@ -58,7 +58,7 @@ def test_name_matches_directory(frontmatter):
         ln.split(":", 1)[1].strip() for ln in frontmatter if ln.startswith("name:")
     ]
     assert names, "frontmatter missing 'name:'"
-    assert names[0] == SKILL_DIR.name == "portfolio-optimization", (
+    assert names[0] == SKILL_DIR.name == "cufolio", (
         "frontmatter 'name' must match the skill directory name"
     )
 
@@ -159,8 +159,8 @@ def test_ground_truth_describes_outcome(evals):
 
 def test_has_positive_and_negative_cases(evals):
     expected_skills = [c["expected_skill"] for c in evals]
-    assert any(s == "portfolio-optimization" for s in expected_skills), (
-        "need >= 1 positive case (expected_skill == 'portfolio-optimization')"
+    assert any(s == "cufolio" for s in expected_skills), (
+        "need >= 1 positive case (expected_skill == 'cufolio')"
     )
     assert any(s is None for s in expected_skills), (
         "need >= 1 negative case (expected_skill == null)"

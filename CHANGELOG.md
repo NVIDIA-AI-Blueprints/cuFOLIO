@@ -65,10 +65,10 @@ Add cuOpt SOCP variance-cap support to the Mean-Variance optimizer.
 - Added SOCP unit + GPU tests (`tests/test_core.py`), a SOCP benchmark workflow
   (`tests/benchmarks/benchmark_workflows.py`, `tests/benchmarks/thresholds.toml`,
   `tests/test_skill_benchmarks.py`), and the `mean-variance-socp-var-limit`
-  eval case (`skills/portfolio-optimization/evals/evals-full.json`, now 10 cases).
-- Updated docs: `skills/portfolio-optimization/SKILL.md`,
-  `skills/portfolio-optimization/references/workflows/agent_recipes.md`,
-  `skills/portfolio-optimization/skill-card.md`, `skills/portfolio-optimization/evals/EVAL.md`, and the root
+  eval case (`skills/cufolio/evals/evals-full.json`, now 10 cases).
+- Updated docs: `skills/cufolio/SKILL.md`,
+  `skills/cufolio/references/workflows/agent_recipes.md`,
+  `skills/cufolio/skill-card.md`, `skills/cufolio/evals/EVAL.md`, and the root
   `README.md` install instructions for the new extra.
 
 ## 2026-06-05 — PR #47
@@ -85,7 +85,7 @@ Add the public Streamlit rebalancing demo.
 
 Add the portfolio optimization agent skill for the NVIDIA skills catalog.
 
-- Added agent/plugin manifests, `skills/portfolio-optimization/SKILL.md`, skill card,
+- Added agent/plugin manifests, `skills/cufolio/SKILL.md`, skill card,
   benchmark docs, eval definitions, and workflow recipes.
 - Added skill validation workflow/utilities plus benchmark and static skill tests.
 - Hardened portfolio optimization APIs and docs around scenario inputs, portfolio behavior,

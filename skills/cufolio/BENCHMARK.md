@@ -1,12 +1,12 @@
 # Evaluation Report
 
-Evaluation of the `portfolio-optimization` skill before publication through NVSkills-Eval.
+Evaluation of the `cufolio` skill before publication through NVSkills-Eval.
 
 This benchmark summarizes 3-Tier Evaluation from NVSkills-Eval results for the skill. The goal is to document whether the skill is safe, discoverable, effective, and useful for agents before it is published for broader workflow use.
 
 ## Evaluation Summary
 
-- Skill: `portfolio-optimization`
+- Skill: `cufolio`
 - Evaluation date: 2026-06-11
 - NVSkills-Eval profile: `external`
 - Environment: `astra-sandbox`

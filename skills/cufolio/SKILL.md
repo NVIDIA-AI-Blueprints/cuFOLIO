@@ -1,5 +1,5 @@
 ---
-name: portfolio-optimization
+name: cufolio
 description: Use when a user asks to build, optimize, backtest, rebalance, or analyze a stock portfolio with Mean-CVaR, Mean-Variance/SOCP variance caps, efficient frontiers, scenario generation, or NVIDIA cuOpt.
 license: Apache-2.0
 metadata:
