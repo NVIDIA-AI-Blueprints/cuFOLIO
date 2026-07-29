@@ -1,0 +1,39 @@
+# CODEOWNERS
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Default: all changes require review from the systems team.
+* @NVIDIA-AI-Blueprints/cuopt-system
+
+# ── Python library ────────────────────────────────────────────────────────────
+/src/                    @NVIDIA-AI-Blueprints/cuopt-core
+
+# ── Notebooks ─────────────────────────────────────────────────────────────────
+/notebooks/              @NVIDIA-AI-Blueprints/cuopt-core
+/brev/                   @NVIDIA-AI-Blueprints/cuopt-system
+
+# ── Tests ─────────────────────────────────────────────────────────────────────
+/tests/                  @NVIDIA-AI-Blueprints/cuopt-core
+
+# ── Agent skills and IDE/plugin manifests ─────────────────────────────────────
+/skills/                 @NVIDIA-AI-Blueprints/cuopt-system
+/.claude-plugin/         @NVIDIA-AI-Blueprints/cuopt-system
+/.cursor-plugin/         @NVIDIA-AI-Blueprints/cuopt-system
+/gemini-extension.json   @NVIDIA-AI-Blueprints/cuopt-system
+/AGENTS.md               @NVIDIA-AI-Blueprints/cuopt-system
+
+# ── CI/CD and build config ────────────────────────────────────────────────────
+/.github/workflows/      @NVIDIA-AI-Blueprints/cuopt-core
+/ci/                     @NVIDIA-AI-Blueprints/cuopt-core
+/pyproject.toml          @NVIDIA-AI-Blueprints/cuopt-core
+/.pre-commit-config.yaml @NVIDIA-AI-Blueprints/cuopt-core
+
+# ── Demo ──────────────────────────────────────────────────────────────────────
+/demo/                   @NVIDIA-AI-Blueprints/cuopt-core
+
+# ── Repo-level docs and legal ─────────────────────────────────────────────────
+/README.md               @NVIDIA-AI-Blueprints/cuopt-core
+/CONTRIBUTING.md         @NVIDIA-AI-Blueprints/cuopt-core
+/CHANGELOG.md            @NVIDIA-AI-Blueprints/cuopt-core
+/LICENSE                 @NVIDIA-AI-Blueprints/cuopt-system
+/LICENSE-3rd-party.txt   @NVIDIA-AI-Blueprints/cuopt-system
+/SECURITY.md             @NVIDIA-AI-Blueprints/cuopt-system
