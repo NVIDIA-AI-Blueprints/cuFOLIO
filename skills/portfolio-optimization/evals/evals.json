@@ -2,7 +2,7 @@
   {
     "id": "build-optimal-cvar",
     "question": "Using the cufolio package, build the optimal Mean-CVaR portfolio from the S&P 500 dataset and show me the allocation, expected return, and CVaR.",
-    "expected_skill": "cufolio",
+    "expected_skill": "portfolio-optimization",
     "expected_script": null,
     "should_trigger": true,
     "ground_truth": "The agent returns a non-degenerate long-only allocation across multiple S&P 500 names (not 100% cash), solved on GPU with cuOpt, and reports per-asset weights summing to ~1 along with the expected daily return (roughly 0.1%-0.4%) and the CVaR (roughly 0.02-0.03 at 0.95 confidence).",
@@ -19,7 +19,7 @@
   {
     "id": "efficient-frontier-plot",
     "question": "Plot the efficient frontier for the S&P 500 universe using cufolio.",
-    "expected_skill": "cufolio",
+    "expected_skill": "portfolio-optimization",
     "expected_script": null,
     "should_trigger": true,
     "ground_truth": "The agent produces an efficient-frontier plot plus a metrics table across about 25 risk-aversion levels in which expected return is non-decreasing as CVaR increases, from a single create_efficient_frontier call.",
