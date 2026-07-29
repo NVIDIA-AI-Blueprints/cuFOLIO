@@ -1,8 +1,8 @@
 [
   {
     "id": "build-optimal-cvar",
-    "question": "Using this cuOpt-powered portfolio optimization example, build the optimal Mean-CVaR portfolio from the S&P 500 dataset and show me the allocation, expected return, and CVaR.",
-    "expected_skill": "cufolio",
+    "question": "Using the cufolio package, build the optimal Mean-CVaR portfolio from the S&P 500 dataset and show me the allocation, expected return, and CVaR.",
+    "expected_skill": "portfolio-optimization",
     "expected_script": null,
     "should_trigger": true,
     "ground_truth": "The agent returns a non-degenerate long-only allocation across multiple S&P 500 names (not 100% cash), solved on GPU with cuOpt, and reports per-asset weights summing to ~1 along with the expected daily return (roughly 0.1%-0.4%) and the CVaR (roughly 0.02-0.03 at 0.95 confidence).",
@@ -18,8 +18,8 @@
   },
   {
     "id": "mean-variance-socp-var-limit",
-    "question": "Using this cuOpt-powered portfolio optimization example, solve a Mean-Variance portfolio with a hard variance cap using cuOpt SOCP support and report the allocation, expected return, realized variance, and variance cap.",
-    "expected_skill": "cufolio",
+    "question": "Using the cufolio package, solve a Mean-Variance portfolio with a hard variance cap using cuOpt SOCP support and report the allocation, expected return, realized variance, and variance cap.",
+    "expected_skill": "portfolio-optimization",
     "expected_script": null,
     "should_trigger": true,
     "ground_truth": "The agent computes LOG returns, builds MeanVarianceParameters with a positive var_limit and fully invested long-only bounds, solves with the direct cuOpt Python API rather than a CPU solver, and reports weights plus expected return, realized variance, and confirmation that realized variance is at or below the cap.",
@@ -35,8 +35,8 @@
   },
   {
     "id": "efficient-frontier-plot",
-    "question": "Plot the efficient frontier for the S&P 500 universe using the cuOpt-powered portfolio optimization example.",
-    "expected_skill": "cufolio",
+    "question": "Plot the efficient frontier for the S&P 500 universe using cufolio.",
+    "expected_skill": "portfolio-optimization",
     "expected_script": null,
     "should_trigger": true,
     "ground_truth": "The agent produces an efficient-frontier plot plus a metrics table across about 25 risk-aversion levels in which expected return is non-decreasing as CVaR increases, from a single create_efficient_frontier call.",
@@ -50,8 +50,8 @@
   },
   {
     "id": "efficient-frontier-weights-table",
-    "question": "Give me a table of per-asset portfolio weights across a range of risk-aversion levels using the cuOpt-powered portfolio optimization example.",
-    "expected_skill": "cufolio",
+    "question": "Give me a table of per-asset portfolio weights across a range of risk-aversion levels using cufolio.",
+    "expected_skill": "portfolio-optimization",
     "expected_script": null,
     "should_trigger": true,
     "ground_truth": "The agent produces a table with one row per risk-aversion level and per-asset weight columns (plus cash), obtained by expanding the 'weights' column that create_efficient_frontier returns in results_df.",
@@ -64,8 +64,8 @@
   },
   {
     "id": "backtest-vs-benchmarks",
-    "question": "Backtest the optimized portfolio against some benchmark portfolios and report the risk-adjusted performance.",
-    "expected_skill": "cufolio",
+    "question": "Backtest the optimal cufolio portfolio against some benchmark portfolios and report the risk-adjusted performance.",
+    "expected_skill": "portfolio-optimization",
     "expected_script": null,
     "should_trigger": true,
     "ground_truth": "The agent runs a historical backtest of the optimized portfolio against benchmark portfolios and reports cumulative return, Sharpe, Sortino, and max drawdown, with the optimized portfolio achieving a higher Sharpe than a naive equal-weight benchmark.",
@@ -79,8 +79,8 @@
   },
   {
     "id": "rebalance-monthly",
-    "question": "Using this cuOpt-powered portfolio optimization example, set up a monthly rebalancing strategy and backtest it with transaction costs.",
-    "expected_skill": "cufolio",
+    "question": "Set up a monthly rebalancing strategy with cufolio and backtest it with transaction costs.",
+    "expected_skill": "portfolio-optimization",
     "expected_script": null,
     "should_trigger": true,
     "ground_truth": "The agent sets up a monthly rebalancing backtest with rebalance_portfolio and re_optimize using re_optimize_criteria of type drift_from_optimal with threshold 0, applies transaction costs, and reports the results table, the rebalance dates, and the cumulative portfolio value series.",
