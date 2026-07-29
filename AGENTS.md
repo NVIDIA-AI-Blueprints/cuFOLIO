@@ -1,6 +1,6 @@
-# AGENTS.md — cuFOLIO AI Agent Entry Point
+# AGENTS.md — Portfolio Optimization with cuOpt
 
-AI agent skills for NVIDIA-accelerated quantitative portfolio optimization. Skills live in **`skills/`** at the repo root and drive the installed `cufolio` package (NVIDIA cuOpt + cuML).
+AI agent skills for NVIDIA-accelerated quantitative portfolio optimization. Skills live in **`skills/`** at the repo root and drive the installed `portfolio_optimization` package (NVIDIA cuOpt + cuML).
 
 ## Skills
 
@@ -9,4 +9,4 @@ AI agent skills for NVIDIA-accelerated quantitative portfolio optimization. Skil
 ## Notes
 
 - Always solve on the cuOpt GPU solver (`cp.CUOPT`, `solver_method="PDLP"`); never fall back to a CPU solver.
-- The skill assumes the `cufolio` package is installed (Brev launchable or `uv sync --extra cuda12|13`).
+- The skill assumes the `portfolio_optimization` package is installed (Brev launchable or `uv sync --extra cuda12|13`).

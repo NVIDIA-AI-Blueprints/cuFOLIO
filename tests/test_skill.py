@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Layer 1: static compliance gate for the cufolio agent skill.
+"""Layer 1: static compliance gate for the portfolio optimization agent skill.
 
 Checks that SKILL.md is spec-compliant and that evals.json is well-formed. Pure
-stdlib + pytest (no GPU, no cufolio import, no network), so it runs in the normal
+stdlib + pytest (no GPU, no portfolio optimization package import, no network), so it runs in the normal
 CI lane and is the fast "unit test for the skill" guard.
 """
 

@@ -1,4 +1,4 @@
-# Quantitative Portfolio Optimization developer example
+# Portfolio Optimization Powered by NVIDIA cuOpt
 
 ## Disclaimer
 This project will download and install additional third-party open source software projects. Review the license terms of these open source projects before use.
@@ -7,7 +7,7 @@ This project will download and install additional third-party open source softwa
 
 ## Overview
 
-This developer example addresses the financial industry's trade-off between **computational speed** and **model complexity** in portfolio optimization. By leveraging **NVIDIA accelerated computing**, this solution transforms robust analysis (e.g., Mean-CVaR, large-scale simulations) from slow batch processing into a **fast, iterative workflow** for dynamic decision-making.
+This portfolio optimization developer example addresses the financial industry's trade-off between **computational speed** and **model complexity**. By leveraging **NVIDIA accelerated computing** with **[NVIDIA cuOpt](https://github.com/NVIDIA/cuopt)**, this solution transforms robust analysis (e.g., Mean-CVaR, large-scale simulations) from slow batch processing into a **fast, iterative workflow** for dynamic decision-making.
 
 ### Accelerated Architecture
 
@@ -19,13 +19,13 @@ The end-to-end pipeline connects market data ingestion to optimal strategy backt
 * **Performance:** Achieves speedups of up to **100x** when generating scenarios.
 
 #### 2. Mean-CVaR Optimization
-* **Technology:** **NVIDIA cuOpt** open-source solvers.
+* **Technology:** **[NVIDIA cuOpt](https://github.com/NVIDIA/cuopt)** open-source solvers.
 * **Function:** Efficiently solves complex, scenario-based **Mean-CVaR portfolio optimization** problems.
 * **Performance:** Consistently outperforms state-of-the-art CPU-based solvers, with up to **160x speedups** in large-scale problems.
 
 #### 3. Strategy Backtesting & Refinement
 * **Technology:** **CUDA-X Data Science** and **HPC SDK**.
-* **Function:** Rigorously tests the **trading strategies** and provides insights into strategy fine-tuning. 
+* **Function:** Rigorously tests the **trading strategies** and provides insights into strategy fine-tuning.
 
 ### Key Takeaways
 
@@ -84,8 +84,8 @@ docker run --gpus all -it --rm \
   nvcr.io/nvidia/pytorch:25.10-py3
 
 # Clone the repository
-git clone https://github.com/NVIDIA-AI-Blueprints/cuFOLIO.git
-cd cuFOLIO
+git clone https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization.git
+cd portfolio-optimization
 
 # Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -153,7 +153,7 @@ If you are using the PyTorch Docker container above, make sure it was started wi
 
 ```bash
 uv pip install -r demo/requirements.txt
-uv run python -c "from cufolio.utils import download_data; download_data('data/stock_data', datasets=['sp500'])"
+uv run python -c "from portfolio_optimization.utils import download_data; download_data('data/stock_data', datasets=['sp500'])"
 uv run streamlit run demo/rebalancing_streamlit_app.py --server.address 0.0.0.0 --server.port 8501
 ```
 
@@ -182,14 +182,16 @@ We welcome contributions to this project! Please see [CONTRIBUTING.md](CONTRIBUT
 ## Community
 
 For questions, discussions, and community support:
-- **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/NVIDIA-AI-Blueprints/cuFOLIO/issues)
-- **Discussions**: Join conversations in [GitHub Discussions](https://github.com/NVIDIA-AI-Blueprints/cuFOLIO/discussions)
+- **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/issues)
+- **Discussions**: Join conversations in [GitHub Discussions](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/discussions)
 
 ---
 ## References
 
+- [NVIDIA cuOpt](https://github.com/NVIDIA/cuopt) — source repository
 - [NVIDIA cuOpt Documentation](https://docs.nvidia.com/cuopt/)
-- [RAPIDS cuML](https://docs.rapids.ai/api/cuml/stable/)
+- [RAPIDS cuML](https://github.com/rapidsai/cuml) — source repository
+- [RAPIDS cuML Documentation](https://docs.rapids.ai/api/cuml/stable/)
 - Markowitz, H. (1952). "Portfolio Selection". *The Journal of Finance*, 7(1), 77-91.
 - Rockafellar, R. T., & Uryasev, S. (2000). "Optimization of conditional value-at-risk". *Journal of Risk*, 2, 21-42.
 

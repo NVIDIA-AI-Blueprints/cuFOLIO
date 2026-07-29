@@ -12,7 +12,7 @@ metadata:
     - gpu
 ---
 
-# cuFOLIO Skill
+# Portfolio Optimization with NVIDIA cuOpt
 
 <!--
 SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
@@ -21,7 +21,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Purpose
 
-Build and analyze quantitative portfolios with NVIDIA-accelerated Mean-CVaR and Mean-Variance optimization. Use cuFOLIO to compute returns, generate KDE scenarios for CVaR, solve variance-cap Markowitz allocations as SOCP/QCQP problems with the cuOpt GPU solver, trace an efficient frontier, backtest portfolios, and run rebalancing workflows from price data.
+Build and analyze quantitative portfolios with NVIDIA-accelerated Mean-CVaR and Mean-Variance optimization. Use the `portfolio_optimization` package to compute returns, generate KDE scenarios for CVaR, solve variance-cap Markowitz allocations as SOCP/QCQP problems with the cuOpt GPU solver, trace an efficient frontier, backtest portfolios, and run rebalancing workflows from price data.
 
 ## When to Use
 
@@ -36,13 +36,13 @@ Use this skill when the task is to:
 - Rebalance a portfolio on a schedule or drift trigger.
 - Run workflows on an S&P 500, S&P 100, Dow 30, or user-supplied price dataset.
 
-Common trigger phrases include "optimize my portfolio", "build a CVaR portfolio", "use cuFOLIO on these tickers", "solve with cuOpt", "plot the efficient frontier", "show weights by risk aversion", "backtest this allocation", "rebalance monthly", "analyze my holdings with CVaR", "compare allocations", "reduce downside risk", "construct an allocation", "assess allocation options", "stress-test my holdings", "evaluate downside-risk exposure", "review my holdings under weight caps", "compare benchmark portfolios", "simulate CVaR scenarios", "screen portfolio risk", "optimize holdings under constraints", "solve a variance-cap portfolio", "use SOCP", "set a volatility cap", and "find a lower-risk allocation".
+Common trigger phrases include "optimize my portfolio", "build a CVaR portfolio", "use cuOpt to optimize these tickers", "solve with cuOpt", "plot the efficient frontier", "show weights by risk aversion", "backtest this allocation", "rebalance monthly", "analyze my holdings with CVaR", "compare allocations", "reduce downside risk", "construct an allocation", "assess allocation options", "stress-test my holdings", "evaluate downside-risk exposure", "review my holdings under weight caps", "compare benchmark portfolios", "simulate CVaR scenarios", "screen portfolio risk", "optimize holdings under constraints", "solve a variance-cap portfolio", "use SOCP", "set a volatility cap", and "find a lower-risk allocation".
 
 Do not use it for generic finance summaries, price forecasting, neural-network training, vehicle routing, or non-portfolio optimization.
 
 ## Prerequisites
 
-- Python environment with the installed `cufolio` package.
+- Python environment with the installed `portfolio_optimization` package.
 - NVIDIA GPU runtime with cuOpt and cuML installed. Mean-Variance SOCP workflows require a cuOpt build with QCQP/SOCP support, such as the 26.06 line or newer.
 - CUDA extra matching the host and workflow: `uv sync --extra cuda12` for full cuOpt/cuML 26.06 on CUDA 12, `uv sync --extra cuda13` for the current full CUDA 13 stack, or `uv sync --extra cuda13-socp` for CUDA 13 SOCP-only validation with cuOpt 26.06.
 - `cvxpy` exposing `cp.CUOPT`.
@@ -50,18 +50,18 @@ Do not use it for generic finance summaries, price forecasting, neural-network t
 
 ## Setup
 
-This skill drives the installed `cufolio` package. A ready environment can come from the Brev launchable or from `NVIDIA-AI-Blueprints/cuFOLIO` after installing the matching CUDA extra.
+This skill drives the installed `portfolio_optimization` package. A ready environment can come from the Brev launchable or from the `NVIDIA-AI-Blueprints/portfolio-optimization` repository after installing the matching CUDA extra.
 
-In packaged agent/eval sandboxes, `cufolio` may be available through `PYTHONPATH` rather than as a separately published wheel. Verify the local package with `python -c "import cufolio"` before declaring it missing. Do not `pip install cufolio`, do not reimplement cuFOLIO workflows from scratch, and do not replace the package APIs with generic pandas/scipy/cvxpy portfolio code.
+In packaged agent/eval sandboxes, `portfolio_optimization` may be available through `PYTHONPATH` rather than as a separately published wheel. Verify the local package with `python -c "import portfolio_optimization"` before declaring it missing. Do not `pip install portfolio_optimization`; do not reimplement the example workflows from scratch, and do not replace the package APIs with generic pandas/scipy/cvxpy portfolio code.
 
 For concrete implementation details, use `references/workflows/agent_recipes.md` as the source of truth. It contains exact working shapes for loading prices, preparing returns, solving with cuOpt, building a 25-point frontier, backtesting against equal weight, and calling the rebalancer.
 
-The default dataset is `data/stock_data/sp500.csv`. It is gitignored. Before a first-run download, tell the user this fetches public market data through the cuFOLIO/yfinance data helper and ask them to confirm:
+The default dataset is `data/stock_data/sp500.csv`. It is gitignored. Before a first-run download, tell the user this fetches public market data through the package's yfinance data helper and ask them to confirm:
 
 ```python
 import cvxpy as cp
-from cufolio.cvar_parameters import CvarParameters
-from cufolio.utils import download_data
+from portfolio_optimization.cvar_parameters import CvarParameters
+from portfolio_optimization.utils import download_data
 
 download_data("data/stock_data", datasets=["sp500"])
 CVAR_SOLVER_SETTINGS = {"solver": cp.CUOPT, "verbose": False, "solver_method": "PDLP"}
@@ -76,7 +76,7 @@ cvar_params = CvarParameters(
 
 Briefly state the defaults being applied before execution, then use these guardrails:
 
-1. Load `data/stock_data/sp500.csv`; if it is missing, ask before downloading `sp500` with `cufolio.utils.download_data`. Do not glob, substitute, or fabricate price data.
+1. Load `data/stock_data/sp500.csv`; if it is missing, ask before downloading `sp500` with `portfolio_optimization.utils.download_data`. Do not glob, substitute, or fabricate price data.
 2. Validate user CSVs before solving: require a date-like index or first date column, numeric ticker columns, at least 60 rows after date filtering, and at least one requested ticker. If the user gives start/end dates, slice the price DataFrame before returns computation and report the retained date range. Filter tickers on the price DataFrame before returns are computed. `regime_dict` does not take a ticker field.
 3. Compute LOG returns with `utils.calculate_returns(...)`.
 4. For Mean-CVaR tasks, generate scenarios with `cvar_utils.generate_cvar_data(...)`, KDE, and `KDESettings(device="GPU")`. For Mean-Variance SOCP variance-cap tasks, do not generate CVaR scenarios; use the `returns_dict` directly after LOG return computation.
@@ -86,12 +86,12 @@ Briefly state the defaults being applied before execution, then use these guardr
 8. Solve with NVIDIA cuOpt only. For CVaR, verify `hasattr(cp, "CUOPT")` and `str(cp.CUOPT) in {str(s) for s in cp.installed_solvers()}`, then pass `CVAR_SOLVER_SETTINGS` to every single-shot solve or looped frontier solve. For direct Mean-Variance SOCP, verify the `cuopt` Python package is importable and call the optimizer with `api="cuopt_python"`; cuOpt auto-selects the barrier method for quadratic constraints. Never fall back to CLARABEL, SCS, ECOS, or another CPU solver. If cuOpt is absent, finish validation/setup and report that the GPU/cuOpt runtime is missing instead of fabricating a CPU result.
 9. For custom constraints, map user requests to the appropriate parameter model: CVaR risk controls to `CvarParameters`, variance or volatility caps to `MeanVarianceParameters.var_limit`, weight caps to `w_min`/`w_max`, risk appetite to `risk_aversion`, confidence level to `confidence`, and cash allowance to `c_max`. Treat cardinality plus SOCP as unsupported unless the package exposes explicit mixed-integer conic support.
 10. If the user omits a benchmark for backtesting, use an equal-weight portfolio over the same tickers. If the user omits a constraint, keep the defaults table values and briefly restate consequential assumptions before solving.
-11. Deliver weights sorted by allocation, cash weight, expected return, solver label (`cuOpt GPU`), and the risk metric used: CVaR for Mean-CVaR or realized variance plus `var_limit` for SOCP. Include any requested frontier figure, weights table, backtest metrics, or rebalancing schedule. For tables, include tickers as columns or rows with decimal weights and percentages; for plots, preserve the returned cuFOLIO figure instead of redrawing from scratch.
+11. Deliver weights sorted by allocation, cash weight, expected return, solver label (`cuOpt GPU`), and the risk metric used: CVaR for Mean-CVaR or realized variance plus `var_limit` for SOCP. Include any requested frontier figure, weights table, backtest metrics, or rebalancing schedule. For tables, include tickers as columns or rows with decimal weights and percentages; for plots, preserve the figure returned by the package instead of redrawing from scratch.
 12. For report-grade answers, include evidence that the requested workflow actually ran. For an efficient frontier, state `len(results_df)` and use the requested `ra_num` (25 unless the user specifies otherwise). For a variance-cap SOCP solve, report `result_row["solver"]`, realized variance, the requested `var_limit`, and confirm realized variance is at or below the cap. For a weights table, expand `results_df["weights"]` into ticker columns and include `cash` plus `risk_aversion`. For a backtest, include `mean portfolio return`, `sharpe`, `sortino`, and `max drawdown` for both optimized and benchmark portfolios. For rebalancing, include `results_dataframe`, `re_optimize_dates`, and the tail of `cumulative_portfolio_value`.
 
 ## Canonical Workflow Skeleton
 
-Start positive cuFOLIO tasks from this shape and adapt only the requested output. For complete copyable functions, read `references/workflows/agent_recipes.md` before writing custom code.
+Start applicable portfolio optimization tasks from this shape and adapt only the requested output. For complete copyable functions, read `references/workflows/agent_recipes.md` before writing custom code.
 
 ### Mean-CVaR workflow
 
@@ -99,10 +99,10 @@ Start positive cuFOLIO tasks from this shape and adapt only the requested output
 import cvxpy as cp
 import pandas as pd
 
-from cufolio import backtest, cvar_optimizer, cvar_utils, rebalance, utils
-from cufolio.cvar_parameters import CvarParameters
-from cufolio.portfolio import Portfolio
-from cufolio.settings import KDESettings, ReturnsComputeSettings, ScenarioGenerationSettings
+from portfolio_optimization import backtest, cvar_optimizer, cvar_utils, rebalance, utils
+from portfolio_optimization.cvar_parameters import CvarParameters
+from portfolio_optimization.portfolio import Portfolio
+from portfolio_optimization.settings import KDESettings, ReturnsComputeSettings, ScenarioGenerationSettings
 
 if not hasattr(cp, "CUOPT") or str(cp.CUOPT) not in {str(s) for s in cp.installed_solvers()}:
     raise RuntimeError("cuOpt GPU solver is required; do not substitute a CPU solver.")
@@ -143,9 +143,9 @@ result, optimal_portfolio = optimizer.solve_optimization_problem(
 import importlib.util
 import numpy as np
 
-from cufolio import mean_variance_optimizer, utils
-from cufolio.mean_variance_parameters import MeanVarianceParameters
-from cufolio.settings import ApiSettings, ReturnsComputeSettings
+from portfolio_optimization import mean_variance_optimizer, utils
+from portfolio_optimization.mean_variance_parameters import MeanVarianceParameters
+from portfolio_optimization.settings import ApiSettings, ReturnsComputeSettings
 
 if importlib.util.find_spec("cuopt") is None:
     raise RuntimeError("cuOpt Python API is required; do not substitute a CPU solver.")
@@ -215,7 +215,7 @@ The default S&P 500 file is a historical snapshot and can omit current constitue
 
 ## Key APIs
 
-Use the package APIs instead of reimplementing portfolio math or simulation loops. cuFOLIO helpers return flat objects: `returns_dict` has keys such as `returns`, `mean`, `covariance`, and `tickers`; do not index it as `returns_dict["regime_1"]`. `solve_optimization_problem(...)` returns `(result_row, portfolio)`, not a nested result dictionary.
+Use the package APIs instead of reimplementing portfolio math or simulation loops. `portfolio_optimization` helpers return flat objects: `returns_dict` has keys such as `returns`, `mean`, `covariance`, and `tickers`; do not index it as `returns_dict["regime_1"]`. `solve_optimization_problem(...)` returns `(result_row, portfolio)`, not a nested result dictionary.
 
 - Returns: `utils.calculate_returns(input_dataset, regime_dict, returns_compute_settings)`.
 - Regime filter: `regime_dict` is `None` or `{"name": "...", "range": ("YYYY-MM-DD", "YYYY-MM-DD")}`; it is not keyed by regime name and does not contain tickers.
@@ -236,7 +236,7 @@ Use the package APIs instead of reimplementing portfolio math or simulation loop
 - "Solve a variance-cap portfolio with SOCP": load prices, compute LOG returns, set `MeanVarianceParameters(var_limit=...)`, solve with direct `api="cuopt_python"`, and report expected return, realized variance, `var_limit`, and weights.
 - "Plot the efficient frontier": call `create_efficient_frontier(...)`, return `results_df`, and show or save the figure as requested.
 - "Give me weights by risk aversion": expand `results_df["weights"]` into a per-asset table.
-- "Backtest against equal weight": build the optimized and equal-weight `Portfolio` objects, then use the cuFOLIO backtester and report Sharpe, Sortino, and max drawdown.
+- "Backtest against equal weight": build the optimized and equal-weight `Portfolio` objects, then use the package backtester and report Sharpe, Sortino, and max drawdown.
 - "Backtest monthly rebalancing": configure `rebalance_portfolio` with the drift trigger above and run `re_optimize(transaction_cost_factor=...)`.
 
 ## Limitations
@@ -244,14 +244,14 @@ Use the package APIs instead of reimplementing portfolio math or simulation loop
 - Requires an NVIDIA GPU with cuOpt and cuML; CPU solvers are intentionally disallowed.
 - Mean-Variance SOCP variance caps require cuOpt QCQP/SOCP support. Use the 26.06 line or newer when installing CUDA extras.
 - `cuda13-socp` intentionally installs cuOpt without cuML because `cuml-cu13` 26.06 is not published yet; use it for direct SOCP/QCQP validation, not GPU KDE CVaR workflows.
-- Cardinality plus SOCP is treated as unsupported unless cuFOLIO exposes explicit mixed-integer conic support.
+- Cardinality plus SOCP is treated as unsupported unless the package exposes explicit mixed-integer conic support.
 - CPU-only eval containers can still validate routing, data handling, and reporting behavior, but they cannot produce a valid cuOpt solve. In that case, report the missing GPU/cuOpt runtime explicitly.
 - Default price data is a historical snapshot and may omit current constituents.
 - First-run dataset download depends on network access unless the user supplies a CSV.
 
 ## Troubleshooting
 
-- Missing default CSV or `FileNotFoundError`: explain that cuFOLIO will fetch public market data with `download_data("data/stock_data", datasets=["sp500"])`; run it only after user confirmation.
+- Missing default CSV or `FileNotFoundError`: explain that the package will fetch public market data with `download_data("data/stock_data", datasets=["sp500"])`; run it only after user confirmation.
 - `SolverError` or missing `cp.CUOPT`: install the CUDA extra matching the host and verify with `python -c "import cvxpy as cp; print(hasattr(cp, 'CUOPT'), cp.installed_solvers())"`.
 - `ImportError` for `cuml` or GPU KDE failures: confirm cuML is present with `python -c "import cuml"` and keep `KDESettings(device="GPU")`. If using `cuda13-socp`, this is expected for CVaR/KDE; switch to `cuda12` or `cuda13` for cuML workflows.
 - SOCP setup fails before solving: verify the installed `cuopt` package is on the 26.06 line or newer and that `MeanVarianceParameters.var_limit` is positive.

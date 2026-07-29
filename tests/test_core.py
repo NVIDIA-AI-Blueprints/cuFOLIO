@@ -5,12 +5,12 @@ import pandas as pd
 import pytest
 from pydantic import ValidationError
 
-from cufolio import mean_variance_optimizer
-from cufolio.backtest import portfolio_backtester
-from cufolio.cvar_data import CvarData
-from cufolio.cvar_optimizer import CVaR
-from cufolio.cvar_parameters import CvarParameters
-from cufolio.cvar_utils import (
+from portfolio_optimization import mean_variance_optimizer
+from portfolio_optimization.backtest import portfolio_backtester
+from portfolio_optimization.cvar_data import CvarData
+from portfolio_optimization.cvar_optimizer import CVaR
+from portfolio_optimization.cvar_parameters import CvarParameters
+from portfolio_optimization.cvar_utils import (
     _annualized_sharpe_ratio,
     _select_efficient_frontier_key_portfolios,
     compute_CVaR,
@@ -18,14 +18,14 @@ from cufolio.cvar_utils import (
     generate_cvar_data,
     normalize_portfolio_weights_to_one,
 )
-from cufolio.mean_variance_parameters import MeanVarianceParameters
-from cufolio.portfolio import Portfolio
-from cufolio.settings import (
+from portfolio_optimization.mean_variance_parameters import MeanVarianceParameters
+from portfolio_optimization.portfolio import Portfolio
+from portfolio_optimization.settings import (
     ApiSettings,
     ReturnsComputeSettings,
     ScenarioGenerationSettings,
 )
-from cufolio.utils import (
+from portfolio_optimization.utils import (
     calculate_log_returns,
     calculate_returns,
     compare_results,

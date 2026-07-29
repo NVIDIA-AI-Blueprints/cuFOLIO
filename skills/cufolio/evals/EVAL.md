@@ -47,7 +47,7 @@ the direct cuOpt SOCP path. A baseline agent (no skill) typically misses these.
 ## Prerequisites
 
 - A GPU host with NVIDIA cuOpt + cuML (the [Brev launchable](https://brev.nvidia.com/launchable/deploy?launchableID=env-360InRZzyHqDnJYQKIxaSggF8xI)
-  works), and the `cufolio` package installed (`uv sync --extra cuda12` or `--extra cuda13`).
+  works), and the `portfolio_optimization` package installed (`uv sync --extra cuda12` or `--extra cuda13`).
 - Network access (the positive cases download the S&P 500 price data on first run).
 - NV-BASE installed and configured with `NVIDIA_INFERENCE_KEY` from inference.nvidia.com.
 
@@ -75,5 +75,5 @@ Discoverability, Effectiveness, Efficiency). Paste/auto-fill the results into `.
   cap — the gate set keeps the pod count low enough to finish.
 - The positive cases download S&P 500 prices on first run. If a sandboxed runner has no network,
   use the guide's `evals/files/` mechanism to stage a small price CSV (not shipped here — the
-  eval host is expected to install `cufolio` and have network/data access).
+  eval host is expected to install `portfolio_optimization` and have network/data access).
 - Negative cases need neither GPU nor data — they only check that the skill does not misfire.

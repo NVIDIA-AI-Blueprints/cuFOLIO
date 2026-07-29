@@ -18,7 +18,7 @@ import pandas as pd
 class DefaultValues:
     """Default values for all input controls"""
 
-    BLUEPRINT_NAME = "Quantitative Portfolio Optimization developer example"
+    BLUEPRINT_NAME = "Portfolio Optimization Powered by NVIDIA cuOpt"
     blueprint_name = BLUEPRINT_NAME
 
     # Dataset Settings

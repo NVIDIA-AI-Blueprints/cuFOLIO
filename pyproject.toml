@@ -1,7 +1,7 @@
 [project]
-name = "cufolio"
+name = "portfolio-optimization"
 version = "26.4"
-description = "Quantitative Portfolio Optimization developer example"
+description = "GPU-accelerated portfolio optimization use case powered by NVIDIA cuOpt"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -45,7 +45,7 @@ ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["cufolio"]
+known-first-party = ["portfolio_optimization"]
 
 [tool.pytest.ini_options]
 markers = [
@@ -53,11 +53,11 @@ markers = [
 ]
 
 [tool.setuptools]
-packages = ["cufolio"]
+packages = ["portfolio_optimization"]
 py-modules = []
 
 [tool.setuptools.package-dir]
-cufolio = "src"
+portfolio_optimization = "src"
 
 [tool.setuptools.package-data]
 "*" = ["*.csv", "*.pkl", "*.parquet"]

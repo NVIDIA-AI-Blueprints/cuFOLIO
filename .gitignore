@@ -28,7 +28,7 @@ venv/
 .venv/
 env/
 ENV/
-cufolio_venv/
+portfolio-optimization-venv/
 
 # uv cache
 .uv/

@@ -40,7 +40,7 @@ Clarify daily return units and add a GPU-vs-CPU composition comparison in
 Reconcile the project and package version strings.
 
 - Set `pyproject` `[project].version` and `src/__init__.py` `version`
-  (exported as `cufolio.version`) both to `26.4`, replacing the disagreeing
+  (exported as `portfolio_optimization.version`) both to `26.4`, replacing the disagreeing
   `25.10` / `1.0.0` and aligning with the cuOpt 26.4 release line and the
   `cuopt-cu13==26.4.*` dependency-pin style.
 - Regenerated `uv.lock`.
@@ -83,12 +83,12 @@ Add the public Streamlit rebalancing demo.
 
 ## 2026-06-02 — PR #46
 
-Add the cuFOLIO agent skill for the NVIDIA skills catalog.
+Add the portfolio optimization agent skill for the NVIDIA skills catalog.
 
 - Added agent/plugin manifests, `skills/cufolio/SKILL.md`, skill card,
   benchmark docs, eval definitions, and workflow recipes.
 - Added skill validation workflow/utilities plus benchmark and static skill tests.
-- Hardened cuFOLIO APIs and docs around scenario inputs, portfolio behavior,
+- Hardened portfolio optimization APIs and docs around scenario inputs, portfolio behavior,
   and benchmark workflows.
 
 ## 2026-05-28 — PR #45
@@ -163,7 +163,7 @@ Large bundled change:
   backends; `notebooks/mean_variance_basic.ipynb`.
 - **Added** — `BaseOptimizer` / `BaseParameters` classes and Pydantic
   settings models (`ReturnsComputeSettings`, `ScenarioGenerationSettings`,
-  `KDESettings`, `ApiSettings`) under `cufolio.settings`.
+  `KDESettings`, `ApiSettings`) under `portfolio_optimization.settings`.
 - **Added** — SP100, DOW30, and Global Titans dataset download support in
   `utils.download_data`.
 - **Added** — `compute_absolute_returns` (simple-diff semantics) as a
@@ -315,9 +315,9 @@ README polish (1 file, +2).
 
 ## 2025-11-06 — PR #1
 
-**Initial code drop.** Core `cufolio` package: CVaR optimizer
-(`cufolio.cvar_optimizer.CVaR`), portfolio backtester
-(`cufolio.backtest.portfolio_backtester`), utils, scenario generation
+**Initial code drop.** Core `portfolio_optimization` package: CVaR optimizer
+(`portfolio_optimization.cvar_optimizer.CVaR`), portfolio backtester
+(`portfolio_optimization.backtest.portfolio_backtester`), utils, scenario generation
 (KDE / Gaussian / historical). Example notebooks: `cvar_basic.ipynb`,
 `efficient_frontier.ipynb`, `rebalancing_strategies.ipynb`. `pyproject.toml`
 with `cuda12` / `cuda13` extras pinning `cuml-cu{12,13}` and

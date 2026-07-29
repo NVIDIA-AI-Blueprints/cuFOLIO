@@ -1,4 +1,4 @@
-Quantitative Portfolio Optimization developer example Licenses
+Portfolio Optimization Powered by NVIDIA cuOpt — Third-Party Licenses
 =================================
 
 This file contains third-party license information for software packages used in this project.

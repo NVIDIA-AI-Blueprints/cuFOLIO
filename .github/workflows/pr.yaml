@@ -73,7 +73,7 @@ jobs:
         run: uv sync --extra dev --python ${{ matrix.python-version }}
 
       - name: Verify import
-        run: uv run python -c "import cufolio"
+        run: uv run python -c "import portfolio_optimization"
 
       - name: Run tests
         run: uv run pytest tests/ -v

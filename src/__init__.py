@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""cufolio: GPU-accelerated portfolio optimization with cuOpt."""
+"""GPU-accelerated portfolio optimization powered by NVIDIA cuOpt."""
 
 version = "26.4"
 
