@@ -7,7 +7,7 @@ This project will download and install additional third-party open source softwa
 
 ## Overview
 
-This portfolio optimization developer example addresses the financial industry's trade-off between **computational speed** and **model complexity** in portfolio optimization. By leveraging **NVIDIA accelerated computing**, this solution transforms robust analysis (e.g., Mean-CVaR, large-scale simulations) from slow batch processing into a **fast, iterative workflow** for dynamic decision-making.
+This portfolio optimization developer example addresses the financial industry's trade-off between **computational speed** and **model complexity**. By leveraging **NVIDIA accelerated computing** with **[NVIDIA cuOpt](https://github.com/NVIDIA/cuopt)**, this solution transforms robust analysis (e.g., Mean-CVaR, large-scale simulations) from slow batch processing into a **fast, iterative workflow** for dynamic decision-making.
 
 ### Accelerated Architecture
 
@@ -19,13 +19,13 @@ The end-to-end pipeline connects market data ingestion to optimal strategy backt
 * **Performance:** Achieves speedups of up to **100x** when generating scenarios.
 
 #### 2. Mean-CVaR Optimization
-* **Technology:** **NVIDIA cuOpt** open-source solvers.
+* **Technology:** **[NVIDIA cuOpt](https://github.com/NVIDIA/cuopt)** open-source solvers.
 * **Function:** Efficiently solves complex, scenario-based **Mean-CVaR portfolio optimization** problems.
 * **Performance:** Consistently outperforms state-of-the-art CPU-based solvers, with up to **160x speedups** in large-scale problems.
 
 #### 3. Strategy Backtesting & Refinement
 * **Technology:** **CUDA-X Data Science** and **HPC SDK**.
-* **Function:** Rigorously tests the **trading strategies** and provides insights into strategy fine-tuning. 
+* **Function:** Rigorously tests the **trading strategies** and provides insights into strategy fine-tuning.
 
 ### Key Takeaways
 
@@ -188,8 +188,10 @@ For questions, discussions, and community support:
 ---
 ## References
 
+- [NVIDIA cuOpt](https://github.com/NVIDIA/cuopt) — source repository
 - [NVIDIA cuOpt Documentation](https://docs.nvidia.com/cuopt/)
-- [RAPIDS cuML](https://docs.rapids.ai/api/cuml/stable/)
+- [RAPIDS cuML](https://github.com/rapidsai/cuml) — source repository
+- [RAPIDS cuML Documentation](https://docs.rapids.ai/api/cuml/stable/)
 - Markowitz, H. (1952). "Portfolio Selection". *The Journal of Finance*, 7(1), 77-91.
 - Rockafellar, R. T., & Uryasev, S. (2000). "Optimization of conditional value-at-risk". *Journal of Risk*, 2, 21-42.
 
