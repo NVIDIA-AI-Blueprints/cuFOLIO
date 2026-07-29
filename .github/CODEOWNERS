@@ -1,0 +1,39 @@
+# CODEOWNERS
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Default: all changes require review from the core team.
+* @NVIDIA-AI-Blueprints/cuopt-team
+
+# ── Python library ────────────────────────────────────────────────────────────
+/src/                   @phuo-nv @jgoldberg-nvidia
+
+# ── Notebooks ─────────────────────────────────────────────────────────────────
+/notebooks/             @phuo-nv @jgoldberg-nvidia @thanhpt1110
+/brev/                  @phuo-nv
+
+# ── Tests ─────────────────────────────────────────────────────────────────────
+/tests/                 @phuo-nv @jgoldberg-nvidia
+
+# ── Agent skills and IDE/plugin manifests ─────────────────────────────────────
+/skills/                @jgoldberg-nvidia
+/.claude-plugin/        @jgoldberg-nvidia
+/.cursor-plugin/        @jgoldberg-nvidia
+/gemini-extension.json  @jgoldberg-nvidia
+/AGENTS.md              @jgoldberg-nvidia
+
+# ── CI/CD and build config ────────────────────────────────────────────────────
+/.github/workflows/     @jgoldberg-nvidia @ramakrishnap-nv
+/ci/                    @jgoldberg-nvidia @ramakrishnap-nv
+/pyproject.toml         @phuo-nv @jgoldberg-nvidia
+/.pre-commit-config.yaml @jgoldberg-nvidia
+
+# ── Demo ──────────────────────────────────────────────────────────────────────
+/demo/                  @jgoldberg-nvidia
+
+# ── Repo-level docs and legal ─────────────────────────────────────────────────
+/README.md              @phuo-nv @jgoldberg-nvidia
+/CONTRIBUTING.md        @jgoldberg-nvidia
+/CHANGELOG.md           @phuo-nv @jgoldberg-nvidia
+/LICENSE                @NVIDIA-AI-Blueprints/cuopt-team
+/LICENSE-3rd-party.txt  @NVIDIA-AI-Blueprints/cuopt-team
+/SECURITY.md            @NVIDIA-AI-Blueprints/cuopt-team
