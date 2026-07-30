@@ -44,7 +44,7 @@ jobs:
       PYTHON_VERSION: 3.12
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Git LFS
         run: |
@@ -146,12 +146,14 @@ jobs:
                 fi
               }
 
+              run_notebook mean_variance_basic.ipynb mean_variance_basic_result.ipynb
               run_notebook cvar_basic.ipynb cvar_basic_result.ipynb
               run_notebook efficient_frontier.ipynb efficient_frontier_result.ipynb
               run_notebook rebalancing_strategies.ipynb rebalancing_strategies_result.ipynb
               run_notebook launchable.ipynb launchable_brev_result.ipynb
 
               echo "===================== Convert notebooks to HTML ====================="
+              convert_notebook mean_variance_basic_result.ipynb
               convert_notebook cvar_basic_result.ipynb
               convert_notebook efficient_frontier_result.ipynb
               convert_notebook rebalancing_strategies_result.ipynb
@@ -162,6 +164,21 @@ jobs:
               exit "$overall_status"
             '
 
+      - name: Run GPU pytest suite
+        run: |
+          docker run --gpus all --rm \
+            -v "$(pwd):/workspace" \
+            -w /workspace \
+            nvcr.io/nvidia/pytorch:25.08-py3 \
+            bash -lc '
+              set -euo pipefail
+              curl -LsSf https://astral.sh/uv/install.sh | sh
+              export PATH="/root/.cargo/bin:$PATH"
+              source "$HOME/.local/bin/env"
+              uv sync --extra cuda13 --extra dev
+              uv run pytest tests/ -v -m gpu
+            '
+
       - name: Verify results
         if: success()
         env:
@@ -169,6 +186,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Checking for generated files...."
+          test -s notebooks/mean_variance_basic_result.html
           test -s notebooks/cvar_basic_result.html
           test -s notebooks/efficient_frontier_result.html
           test -s notebooks/rebalancing_strategies_result.html
@@ -192,6 +210,8 @@ jobs:
         with:
           name: notebook-results
           path: |
+             notebooks/mean_variance_basic_result.html
+             notebooks/mean_variance_basic_result.ipynb
              notebooks/cvar_basic_result.html
              notebooks/cvar_basic_result.ipynb
              notebooks/efficient_frontier_result.html
