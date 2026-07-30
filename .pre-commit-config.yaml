@@ -1,12 +1,66 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Files that should never be linted/reformatted by any hook
+exclude: |
+  (?x)^(
+    skills/.*/skill\.oms\.sig|
+    skills/.*/skill-card\.md|
+    skills/.*/BENCHMARK\.md
+  )$
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
+      - id: check-builtin-literals
+      - id: check-executables-have-shebangs
+      - id: check-json
+      - id: check-yaml
+        args: [--unsafe]
+        exclude: ^\.github/workflow-templates/
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.9
     hooks:
       - id: ruff-check
         args: [--fix, --config, pyproject.toml]
       - id: ruff-format
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        args: ["--severity=warning"]
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        args: [--config-data, "{extends: relaxed, rules: {line-length: {max: 150}}}"]
+        files: \.(yaml|yml)$
+        exclude: ^\.github/workflow-templates/
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.24.1
+    hooks:
+      - id: zizmor
+        args: ["--no-online-audits", "--min-severity", "high"]
+
+  - repo: local
+    hooks:
+      - id: validate-skills
+        name: Validate agent skills
+        entry: ci/utils/validate_skills.sh
+        language: system
+        pass_filenames: false
+        files: ^(skills/|\.claude-plugin/|\.cursor-plugin/|gemini-extension\.json|AGENTS\.md|ci/utils/validate_skills\.sh|ci/utils/sync_skills_version\.sh)$
+      # sync-skills-version: enable once a VERSION file is added to the repo
+      # - id: sync-skills-version
+      #   name: Sync skills version from VERSION
+      #   entry: ci/utils/sync_skills_version.sh
+      #   language: system
+      #   pass_filenames: false
+      #   files: ^(VERSION|\.claude-plugin/marketplace\.json|\.cursor-plugin/plugin\.json|gemini-extension\.json|skills/.*/SKILL\.md)$
