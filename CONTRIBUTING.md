@@ -1,6 +1,6 @@
-# Contributing to NVIDIA Quantitative Portfolio Optimization developer example
+# Contributing to the Portfolio Optimization Developer Example
 
-Thank you for your interest in contributing to Quantitative Portfolio Optimization developer example! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to the portfolio optimization developer example powered by NVIDIA cuOpt! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ## Ways to Contribute
 
-There are many ways to contribute to Quantitative Portfolio Optimization developer example:
+There are many ways to contribute to the portfolio optimization developer example:
 
 - **Report bugs**: If you find a bug, please open an issue with detailed information
 - **Suggest enhancements**: Have an idea for a new feature? Let us know!
@@ -40,8 +40,8 @@ There are many ways to contribute to Quantitative Portfolio Optimization develop
 1. **Fork and Clone the Repository**
 
    ```bash
-   git clone https://github.com/your-username/cufolio.git
-   cd cufolio
+   git clone https://github.com/your-username/portfolio-optimization.git
+   cd portfolio-optimization
    ```
 
 2. **Install uv (if not already installed)**
@@ -61,7 +61,7 @@ There are many ways to contribute to Quantitative Portfolio Optimization develop
    uv sync --extra dev
    ```
 
-   This automatically creates a virtual environment and installs the project in editable mode along with development tools like `black`, `isort`, `flake8`, and `pre-commit`.
+   This automatically creates a virtual environment and installs the project in editable mode along with development tools like `ruff` and `pre-commit`.
 
 4. **Set Up Pre-commit Hooks**
 
@@ -69,7 +69,19 @@ There are many ways to contribute to Quantitative Portfolio Optimization develop
    uv run pre-commit install
    ```
 
-   This will automatically run code formatting and linting checks before each commit.
+   This installs the hooks so they run automatically before every `git commit`. To run them manually against all files at any time:
+
+   ```bash
+   uv run pre-commit run --all-files
+   ```
+
+   Or against only the files you've staged:
+
+   ```bash
+   uv run pre-commit run
+   ```
+
+   The hooks cover formatting (`ruff format`), linting (`ruff check`), shell script checks (`shellcheck`), YAML validation (`yamllint`), GitHub Actions security scanning (`zizmor`), and skill manifest validation. The same suite runs in CI via the `Checks` workflow on every PR.
 
 ### Docker Development (Recommended)
 
@@ -88,32 +100,26 @@ uv sync --extra dev
 
 We follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) with the following specifications:
 
-- **Line length**: 88 characters (Black default)
+- **Line length**: 88 characters
 - **String quotes**: Use double quotes for strings
-- **Import ordering**: Managed by `isort` with Black profile
+- **Import ordering**: Managed by `ruff`
 
 ### Code Formatting
 
-All code must be formatted with:
-
-- **Black**: For consistent code formatting
-- **isort**: For import statement ordering
-
-Run formatters before committing:
+All code must be formatted with `ruff`:
 
 ```bash
-uv run black .
-uv run isort .
+uv run ruff format src/
 ```
 
 Or let pre-commit hooks handle it automatically.
 
 ### Linting
 
-We use `flake8` for linting. Run it with:
+We use `ruff` for linting. Run it with:
 
 ```bash
-uv run flake8 src/ 
+uv run ruff check src/
 ```
 
 ### Documentation
@@ -225,9 +231,8 @@ Explain what changes were made and why.
 2. **Run all checks** before submitting:
 
    ```bash
-   uv run black .
-   uv run isort .
-   uv run flake8 src/
+   uv run ruff format --check src/
+   uv run ruff check src/
    uv run pytest
    ```
 
@@ -245,7 +250,7 @@ Explain what changes were made and why.
 
 Before submitting, ensure:
 
-- [ ] Code follows style guidelines (Black, isort, flake8)
+- [ ] Code follows style guidelines (`ruff format` + `ruff check`)
 - [ ] All tests pass
 - [ ] New tests added for new features
 - [ ] Documentation updated (docstrings, README, etc.)
@@ -289,7 +294,7 @@ What actually happened.
 - Python: [e.g., 3.11]
 - CUDA: [e.g., 12.2]
 - GPU: [e.g., A100]
-- NVIDIA Quantitative Portfolio Optimization developer example version: [e.g., 25.10]
+- Portfolio optimization developer example version: [e.g., 25.10]
 
 **Additional Context**
 Any other relevant information.

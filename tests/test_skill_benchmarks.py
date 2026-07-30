@@ -1,7 +1,7 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Layer 3: cufolio skill performance benchmarks (GPU-gated regression suite).
+"""Layer 3: portfolio optimization skill performance benchmarks (GPU-gated regression suite).
 
 Runs the documented SKILL.md workflows end-to-end with NVIDIA cuOpt and asserts
 each meets the standards in ``tests/benchmarks/thresholds.toml``. The whole
@@ -54,6 +54,12 @@ def test_build_optimal_is_non_degenerate(prepared, thresholds):
     fails = bw.check_build_optimal(
         prepared["build_metrics"], thresholds["build_optimal"]
     )
+    assert not fails, fails
+
+
+def test_socp_variance_limit_solves(prepared, thresholds):
+    metrics = bw.run_socp_variance_limit(prepared["returns_dict"])
+    fails = bw.check_socp_variance_limit(metrics, thresholds["socp_variance_limit"])
     assert not fails, fails
 
 

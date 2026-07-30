@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Rebalancing Streamlit App Parameters
 
 Configuration file containing all parameters for the efficient frontier app.
 Modify values here to customize app behavior without changing the main code.
 """
-
-from datetime import datetime
 
 import pandas as pd
 
@@ -18,7 +19,7 @@ import pandas as pd
 class DefaultValues:
     """Default values for all input controls"""
 
-    BLUEPRINT_NAME = "Quantitative Portfolio Optimization developer example"
+    BLUEPRINT_NAME = "Portfolio Optimization Powered by NVIDIA cuOpt"
     blueprint_name = BLUEPRINT_NAME
 
     # Dataset Settings
@@ -38,8 +39,6 @@ class DefaultValues:
     L_TAR = 1.6  # Leverage target
     FIT_TYPE = "kde"  # "kde" or "empirical"
     RISK_AVERSION = 1.2  # Default risk aversion for rebalancing
-
-
 
     # CPU Solver Settings
     DEFAULT_CPU_SOLVER = "HIGHS"  # Default CPU solver
@@ -69,7 +68,6 @@ class InputLimits:
     CONFIDENCE_RANGE = (0.8, 0.99)
     NUM_SCEN_RANGE = (1000, 50000)
     L_TAR_RANGE = (0.5, 2.0)
-
 
     # Discretization Limits
 
@@ -105,7 +103,11 @@ class PlotStyling:
     COLOR_SCHEMES = {
         "nvidia": {
             "frontier": "#7cd7fe",  # Light blue - matches rebalance.py
-            "benchmark": ["#ef9100", "#ff8181", "#0d8473"],  # NVIDIA orange, red, dark teal - matches rebalance.py
+            "benchmark": [
+                "#ef9100",
+                "#ff8181",
+                "#0d8473",
+            ],  # NVIDIA orange, red, dark teal - matches rebalance.py
             "assets": "#c359ef",  # Purple - matches rebalance.py
             "custom": "#fc79ca",  # Pink - matches rebalance.py
             "background": "#FFFFFF",  # White - matches rebalance.py
@@ -113,7 +115,11 @@ class PlotStyling:
         },
         "modern": {
             "frontier": "#7cd7fe",  # Light blue - matches rebalance.py
-            "benchmark": ["#ef9100", "#ff8181", "#0d8473"],  # NVIDIA orange, red, dark teal - matches rebalance.py
+            "benchmark": [
+                "#ef9100",
+                "#ff8181",
+                "#0d8473",
+            ],  # NVIDIA orange, red, dark teal - matches rebalance.py
             "assets": "#c359ef",  # Purple - matches rebalance.py
             "custom": "#fc79ca",  # Pink - matches rebalance.py
             "background": "#FFFFFF",  # White - matches rebalance.py

@@ -62,7 +62,7 @@ body:
       description: Please provide clear description of the feature you request (refer to [User Story format](https://www.atlassian.com/agile/project-management/user-stories#:~:text=User%20story%20template%20and%20examples) and [EARS format](https://ieeexplore.ieee.org/document/5328509))
       placeholder: >
         For new feature request, please use one of the following format to describe the feature
-          1. From End-user perspective, use the following user story format 
+          1. From End-user perspective, use the following user story format
               As a <persona>, I <want to>, <so that>.
           2. From System perspective, use the following EARS format
               <Pre-Condition> <System> shall  <process> <object to be process> <condition>

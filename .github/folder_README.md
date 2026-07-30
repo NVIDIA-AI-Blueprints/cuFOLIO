@@ -22,7 +22,7 @@ Regardless of the issue template selected, some customization for each library i
 - Do the prompts make sense for your repo?
 
 > **Warning**
-> 
+>
 > Be sure to delete whichever templates you are not using
 
 

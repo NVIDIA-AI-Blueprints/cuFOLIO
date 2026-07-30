@@ -1,4 +1,4 @@
-# Quantitative Portfolio Optimization developer example
+# Portfolio Optimization Powered by NVIDIA cuOpt
 
 ## Disclaimer
 This project will download and install additional third-party open source software projects. Review the license terms of these open source projects before use.
@@ -7,7 +7,7 @@ This project will download and install additional third-party open source softwa
 
 ## Overview
 
-This developer example addresses the financial industry's trade-off between **computational speed** and **model complexity** in portfolio optimization. By leveraging **NVIDIA accelerated computing**, this solution transforms robust analysis (e.g., Mean-CVaR, large-scale simulations) from slow batch processing into a **fast, iterative workflow** for dynamic decision-making.
+This portfolio optimization developer example addresses the financial industry's trade-off between **computational speed** and **model complexity**. By leveraging **NVIDIA accelerated computing** with **[NVIDIA cuOpt](https://github.com/NVIDIA/cuopt)**, this solution transforms robust analysis (e.g., Mean-CVaR, large-scale simulations) from slow batch processing into a **fast, iterative workflow** for dynamic decision-making.
 
 ### Accelerated Architecture
 
@@ -19,13 +19,13 @@ The end-to-end pipeline connects market data ingestion to optimal strategy backt
 * **Performance:** Achieves speedups of up to **100x** when generating scenarios.
 
 #### 2. Mean-CVaR Optimization
-* **Technology:** **NVIDIA cuOpt** open-source solvers.
+* **Technology:** **[NVIDIA cuOpt](https://github.com/NVIDIA/cuopt)** open-source solvers.
 * **Function:** Efficiently solves complex, scenario-based **Mean-CVaR portfolio optimization** problems.
 * **Performance:** Consistently outperforms state-of-the-art CPU-based solvers, with up to **160x speedups** in large-scale problems.
 
 #### 3. Strategy Backtesting & Refinement
 * **Technology:** **CUDA-X Data Science** and **HPC SDK**.
-* **Function:** Rigorously tests the **trading strategies** and provides insights into strategy fine-tuning. 
+* **Function:** Rigorously tests the **trading strategies** and provides insights into strategy fine-tuning.
 
 ### Key Takeaways
 
@@ -84,8 +84,8 @@ docker run --gpus all -it --rm \
   nvcr.io/nvidia/pytorch:25.10-py3
 
 # Clone the repository
-git clone https://github.com/NVIDIA-AI-Blueprints/cuFOLIO.git
-cd cuFOLIO
+git clone https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization.git
+cd portfolio-optimization
 
 # Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -95,10 +95,14 @@ source $HOME/.local/bin/env  # (sh, bash, zsh)
 # source $HOME/.local/bin/env.fish  # (fish)
 
 # Install with CUDA-specific dependencies
-uv sync --extra cuda13 # this container image has cuda13
+uv sync --extra cuda13 # full CUDA 13 stack currently tracks cuOpt/cuML 26.04
+# On CUDA 12 hosts, use the full cuOpt/cuML 26.06 stack:
+# uv sync --extra cuda12
+# For direct SOCP testing on CUDA 13 with cuOpt 26.06:
+# uv sync --extra cuda13-socp
 
 # Optional: Install development tools
-uv sync --extra cuda13 --extra dev  
+uv sync --extra cuda13 --extra dev
 
 # Create a Jupyter kernel for this environment
 uv run python -m ipykernel install --user --name=portfolio-opt --display-name "Portfolio Optimization"
@@ -107,13 +111,13 @@ uv run python -m ipykernel install --user --name=portfolio-opt --display-name "P
 uv run jupyter lab --no-browser --NotebookApp.token=''
 ```
 
-**Note:** If you use a different container image than the suggested one above, during uv sync, please use the `--extra cuda12` or `--extra cuda13` flag to install the GPU packages (cuOpt, cuML) matching your container's CUDA version. The `uv sync` command automatically creates a virtual environment and installs all dependencies from `uv.lock`.
+**Note:** If you use a different container image than the suggested one above, during uv sync, use `--extra cuda12` for the full cuOpt/cuML 26.06 CUDA 12 stack or `--extra cuda13` for the current full CUDA 13 cuOpt/cuML stack. As of the cuOpt 26.06 release, `cuml-cu13` 26.06 is not published, so CUDA 13 SOCP testing with cuOpt 26.06 uses `--extra cuda13-socp`; that extra is cuOpt-only and is intended for direct SOCP preview/Mean-Variance variance-cap solves, not GPU KDE/CVaR rebalancing. The `uv sync` command automatically creates a virtual environment and installs all dependencies from `uv.lock`.
 
 **Tip:** To check your CUDA version, run `nvidia-smi` and look for "CUDA Version" in the output.
 
 **Important Notes:**
 - If you encounter "No space left on device" errors, set `UV_CACHE_DIR` to an alternate cache location: `export UV_CACHE_DIR=/path/to/cache/directory`
-- The `cuda12` and `cuda13` extras are mutually exclusive - install only one based on your system's CUDA version
+- The `cuda12`, `cuda13`, and `cuda13-socp` extras are mutually exclusive - install only one based on your system's CUDA version and workflow
 - If you plan to run the Streamlit demo from this container, include `-p 8501:8501` when starting Docker. Docker port mappings cannot be added to an already-running container; restart the container with the port published if it was omitted.
 
 #### Using the Jupyter Kernel
@@ -149,7 +153,7 @@ If you are using the PyTorch Docker container above, make sure it was started wi
 
 ```bash
 uv pip install -r demo/requirements.txt
-uv run python -c "from cufolio.utils import download_data; download_data('data/stock_data', datasets=['sp500'])"
+uv run python -c "from portfolio_optimization.utils import download_data; download_data('data/stock_data', datasets=['sp500'])"
 uv run streamlit run demo/rebalancing_streamlit_app.py --server.address 0.0.0.0 --server.port 8501
 ```
 
@@ -162,7 +166,7 @@ ssh -L 8501:localhost:8501 <user>@<remote-host>
 See [`demo/README_streamlit.md`](demo/README_streamlit.md) for focused deployment instructions.
 
 ### Deploy on Brev
-Deploy using [Brev launchable](https://brev.nvidia.com/launchable/deploy?launchableID=env-360InRZzyHqDnJYQKIxaSggF8xI): start an instance on Brev.nvidia.com and follow the instructions in the notebooks. 
+Deploy using [Brev launchable](https://brev.nvidia.com/launchable/deploy?launchableID=env-360InRZzyHqDnJYQKIxaSggF8xI): start an instance on Brev.nvidia.com and follow the instructions in the notebooks.
 
 
 ---
@@ -178,14 +182,16 @@ We welcome contributions to this project! Please see [CONTRIBUTING.md](CONTRIBUT
 ## Community
 
 For questions, discussions, and community support:
-- **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/NVIDIA-AI-Blueprints/cuFOLIO/issues)
-- **Discussions**: Join conversations in [GitHub Discussions](https://github.com/NVIDIA-AI-Blueprints/cuFOLIO/discussions)
+- **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/issues)
+- **Discussions**: Join conversations in [GitHub Discussions](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/discussions)
 
 ---
 ## References
 
+- [NVIDIA cuOpt](https://github.com/NVIDIA/cuopt) — source repository
 - [NVIDIA cuOpt Documentation](https://docs.nvidia.com/cuopt/)
-- [RAPIDS cuML](https://docs.rapids.ai/api/cuml/stable/)
+- [RAPIDS cuML](https://github.com/rapidsai/cuml) — source repository
+- [RAPIDS cuML Documentation](https://docs.rapids.ai/api/cuml/stable/)
 - Markowitz, H. (1952). "Portfolio Selection". *The Journal of Finance*, 7(1), 77-91.
 - Rockafellar, R. T., & Uryasev, S. (2000). "Optimization of conditional value-at-risk". *Journal of Risk*, 2, 21-42.
 

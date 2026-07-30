@@ -11,40 +11,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a  # v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
           python-version: "3.12"
 
       - name: Install dependencies
         run: uv sync --extra dev
 
-      - name: Check formatting
-        run: uv run ruff format --check src/
-
-      - name: Lint
-        run: uv run ruff check src/
-
       - name: Run tests
         run: uv run pytest tests/ -v
 
   run-notebooks:
-    needs: [lint]
+    needs: [test]
     runs-on: arc-runners-org-nvidia-ai-bp-1-gpu
     env:
       PYTHON_VERSION: 3.12
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Install Git LFS
         run: |
@@ -146,12 +140,14 @@ jobs:
                 fi
               }
 
+              run_notebook mean_variance_basic.ipynb mean_variance_basic_result.ipynb
               run_notebook cvar_basic.ipynb cvar_basic_result.ipynb
               run_notebook efficient_frontier.ipynb efficient_frontier_result.ipynb
               run_notebook rebalancing_strategies.ipynb rebalancing_strategies_result.ipynb
               run_notebook launchable.ipynb launchable_brev_result.ipynb
 
               echo "===================== Convert notebooks to HTML ====================="
+              convert_notebook mean_variance_basic_result.ipynb
               convert_notebook cvar_basic_result.ipynb
               convert_notebook efficient_frontier_result.ipynb
               convert_notebook rebalancing_strategies_result.ipynb
@@ -162,6 +158,21 @@ jobs:
               exit "$overall_status"
             '
 
+      - name: Run GPU pytest suite
+        run: |
+          docker run --gpus all --rm \
+            -v "$(pwd):/workspace" \
+            -w /workspace \
+            nvcr.io/nvidia/pytorch:25.08-py3 \
+            bash -lc '
+              set -euo pipefail
+              curl -LsSf https://astral.sh/uv/install.sh | sh
+              export PATH="/root/.cargo/bin:$PATH"
+              source "$HOME/.local/bin/env"
+              uv sync --extra cuda13 --extra dev
+              uv run pytest tests/ -v -m gpu
+            '
+
       - name: Verify results
         if: success()
         env:
@@ -169,6 +180,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Checking for generated files...."
+          test -s notebooks/mean_variance_basic_result.html
           test -s notebooks/cvar_basic_result.html
           test -s notebooks/efficient_frontier_result.html
           test -s notebooks/rebalancing_strategies_result.html
@@ -188,10 +200,12 @@ jobs:
 
       - name: Upload notebook results as artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: notebook-results
           path: |
+             notebooks/mean_variance_basic_result.html
+             notebooks/mean_variance_basic_result.ipynb
              notebooks/cvar_basic_result.html
              notebooks/cvar_basic_result.ipynb
              notebooks/efficient_frontier_result.html

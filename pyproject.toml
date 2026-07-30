@@ -1,13 +1,13 @@
 [project]
-name = "cufolio"
-version = "26.04"
-description = "Quantitative Portfolio Optimization developer example"
+name = "portfolio-optimization"
+version = "26.6"
+description = "GPU-accelerated portfolio optimization use case powered by NVIDIA cuOpt"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.0.0",
     "pandas>=2.0",
-    "cvxpy>=1.7.0",
+    "cvxpy>=1.9.2",
     "scikit-learn>=1.5",
     "seaborn>=0.13",
     "yfinance>=0.2.0",
@@ -21,12 +21,15 @@ dev = [
     "pre-commit==4.3.0",
 ]
 cuda12 = [
-    "cuml-cu12==26.4.*",
-    "cuopt-cu12==26.04.*",
+    "cuml-cu12==26.6.*",
+    "cuopt-cu12==26.6.*",
 ]
 cuda13 = [
     "cuml-cu13==26.4.*",
-    "cuopt-cu13==26.04.*",
+    "cuopt-cu13==26.4.*",
+]
+cuda13-socp = [
+    "cuopt-cu13==26.6.*",
 ]
 
 [tool.ruff]
@@ -39,10 +42,12 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["E402"]
+"demo/*.py" = ["E402", "F841"]
+"brev/*.ipynb" = ["E402"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["cufolio"]
+known-first-party = ["portfolio_optimization"]
 
 [tool.pytest.ini_options]
 markers = [
@@ -50,11 +55,11 @@ markers = [
 ]
 
 [tool.setuptools]
-packages = ["cufolio"]
+packages = ["portfolio_optimization"]
 py-modules = []
 
 [tool.setuptools.package-dir]
-cufolio = "src"
+portfolio_optimization = "src"
 
 [tool.setuptools.package-data]
 "*" = ["*.csv", "*.pkl", "*.parquet"]
@@ -66,6 +71,14 @@ conflicts = [
         { extra = "cuda12" },
         { extra = "cuda13" },
     ],
+    [
+        { extra = "cuda12" },
+        { extra = "cuda13-socp" },
+    ],
+    [
+        { extra = "cuda13" },
+        { extra = "cuda13-socp" },
+    ],
 ]
 
 [[tool.uv.index]]
@@ -73,11 +86,6 @@ name = "nvidia"
 url = "https://pypi.nvidia.com"
 
 [tool.uv.sources]
-# Build cvxpy from the upstream master branch instead of the PyPI wheel so
-# we can pull in QP-via-cuOpt fixes ahead of the next release. uv.lock pins
-# the resolved commit SHA for reproducibility; bump with
-# `uv lock --upgrade-package cvxpy`.
-cvxpy = { git = "https://github.com/cvxpy/cvxpy.git", branch = "master" }
 cuml-cu12 = { index = "nvidia" }
 cuopt-cu12 = { index = "nvidia" }
 cuml-cu13 = { index = "nvidia" }

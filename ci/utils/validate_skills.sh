@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Validate cuFOLIO agent skills and plugin manifests.
+# Validate portfolio optimization agent skills and plugin manifests.
 # Run from repo root: ./ci/utils/validate_skills.sh
 set -e
 

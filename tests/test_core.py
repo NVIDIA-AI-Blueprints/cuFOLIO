@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 import cvxpy as cp
 import matplotlib
 import numpy as np
@@ -5,11 +8,12 @@ import pandas as pd
 import pytest
 from pydantic import ValidationError
 
-from cufolio.backtest import portfolio_backtester
-from cufolio.cvar_data import CvarData
-from cufolio.cvar_optimizer import CVaR
-from cufolio.cvar_parameters import CvarParameters
-from cufolio.cvar_utils import (
+from portfolio_optimization import mean_variance_optimizer
+from portfolio_optimization.backtest import portfolio_backtester
+from portfolio_optimization.cvar_data import CvarData
+from portfolio_optimization.cvar_optimizer import CVaR
+from portfolio_optimization.cvar_parameters import CvarParameters
+from portfolio_optimization.cvar_utils import (
     _annualized_sharpe_ratio,
     _select_efficient_frontier_key_portfolios,
     compute_CVaR,
@@ -17,9 +21,14 @@ from cufolio.cvar_utils import (
     generate_cvar_data,
     normalize_portfolio_weights_to_one,
 )
-from cufolio.portfolio import Portfolio
-from cufolio.settings import ReturnsComputeSettings, ScenarioGenerationSettings
-from cufolio.utils import (
+from portfolio_optimization.mean_variance_parameters import MeanVarianceParameters
+from portfolio_optimization.portfolio import Portfolio
+from portfolio_optimization.settings import (
+    ApiSettings,
+    ReturnsComputeSettings,
+    ScenarioGenerationSettings,
+)
+from portfolio_optimization.utils import (
     calculate_log_returns,
     calculate_returns,
     compare_results,
@@ -183,6 +192,23 @@ class TestCvarParameters:
         params = CvarParameters(w_min=0.0, w_max=1.0)
         with pytest.raises(ValueError):
             params.update_c_min(-0.1)
+
+
+# ---------------------------------------------------------------------------
+# MeanVarianceParameters
+# ---------------------------------------------------------------------------
+
+
+class TestMeanVarianceParameters:
+    def test_var_limit_must_be_positive(self):
+        with pytest.raises(ValidationError):
+            MeanVarianceParameters(var_limit=0.0)
+        with pytest.raises(ValidationError):
+            MeanVarianceParameters(var_limit=-1.0)
+
+    def test_positive_var_limit_valid(self):
+        params = MeanVarianceParameters(var_limit=0.01)
+        assert params.var_limit == pytest.approx(0.01)
 
 
 # ---------------------------------------------------------------------------
@@ -364,6 +390,72 @@ class TestCVaROptimization:
         )
 
         np.testing.assert_allclose(reported_cvar, computed_cvar, atol=0.02)
+
+
+# ---------------------------------------------------------------------------
+# Small Mean-Variance optimization and SOCP variance caps
+# ---------------------------------------------------------------------------
+
+
+class TestMeanVarianceOptimization:
+    def _equal_weight_variance_cap(self, returns_dict, multiplier=1.05):
+        covariance = np.asarray(returns_dict["covariance"], dtype=float)
+        weights = np.ones(len(returns_dict["tickers"])) / len(returns_dict["tickers"])
+        return float(weights @ covariance @ weights) * multiplier
+
+    def test_cvxpy_var_limit_respects_cap(self, returns_dict):
+        variance_cap = self._equal_weight_variance_cap(returns_dict)
+        params = MeanVarianceParameters(
+            w_min=0.0,
+            w_max=1.0,
+            c_min=0.0,
+            c_max=0.0,
+            L_tar=1.0,
+            var_limit=variance_cap,
+        )
+        optimizer = mean_variance_optimizer.MeanVariance(
+            returns_dict=returns_dict,
+            mean_variance_params=params,
+        )
+        result, portfolio = optimizer.solve_optimization_problem(
+            {"solver": cp.CLARABEL, "verbose": False}, print_results=False
+        )
+
+        weights = np.asarray(portfolio.weights, dtype=float).flatten()
+        cash = float(np.asarray(portfolio.cash).squeeze())
+        realized_variance = float(weights @ returns_dict["covariance"] @ weights)
+
+        np.testing.assert_allclose(np.sum(weights) + cash, 1.0, atol=1e-4)
+        assert realized_variance <= variance_cap + 1e-6
+        assert float(result["variance"]) <= variance_cap + 1e-6
+        assert float(result["return"]) > -1.0
+
+    @pytest.mark.gpu
+    def test_cuopt_python_var_limit_solves_socp(self, returns_dict):
+        pytest.importorskip("cuopt", reason="cuOpt GPU runtime required")
+        variance_cap = self._equal_weight_variance_cap(returns_dict)
+        params = MeanVarianceParameters(
+            w_min=0.0,
+            w_max=1.0,
+            c_min=0.0,
+            c_max=0.0,
+            L_tar=1.0,
+            var_limit=variance_cap,
+        )
+        optimizer = mean_variance_optimizer.MeanVariance(
+            returns_dict=returns_dict,
+            mean_variance_params=params,
+            api_settings=ApiSettings(api="cuopt_python"),
+        )
+        result, portfolio = optimizer.solve_optimization_problem(print_results=False)
+
+        weights = np.asarray(portfolio.weights, dtype=float).flatten()
+        cash = float(np.asarray(portfolio.cash).squeeze())
+        realized_variance = float(weights @ returns_dict["covariance"] @ weights)
+
+        np.testing.assert_allclose(np.sum(weights) + cash, 1.0, atol=1e-4)
+        assert str(result["solver"]).lower() == "cuopt"
+        assert realized_variance <= variance_cap + 1e-6
 
 
 # ---------------------------------------------------------------------------

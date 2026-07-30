@@ -3,6 +3,74 @@
 All notable changes to this project are documented here, one PR per entry,
 newest first, dated by merge to `main`. Backfilled from git history.
 
+## 2026-07-17 — PR #56
+
+Guard against None CVXPY variable values when the solver hits a resource
+limit before finding a feasible incumbent.
+
+- Added a check in `_solve_cvxpy_problem` that raises a `RuntimeError`
+  immediately after `solve()` if `self.w.value is None`, before any
+  downstream `.value` access occurs.
+- Follows from `cvxpy` PR #3443, which downgrades cuOpt's status to
+  `INFEASIBLE_INACCURATE` when a time limit is hit with no incumbent
+  found. Variable `.value`s are now `None` in that case instead of
+  returning an empty primal solution.
+- Once the upstream `cvxpy` crash was fixed, this initially surfaced
+  as a `TypeError` in `_get_cvxpy_risk_metric_value`; this new check
+  catches it earlier and provides the `cvxpy` solver status for debugging.
+
+## 2026-07-03 — PR #54
+
+Clarify daily return units and add a GPU-vs-CPU composition comparison in
+`notebooks/mean_variance_basic.ipynb`.
+
+- Added a units note and per-statistic labels: all figures derive from 1-day
+  LOG returns and are daily, not annualized; added an annualized block
+  (×252 log return, exponential conversion to simple return, √252 scaling for
+  volatility/Sharpe).
+- Added a portfolio-composition comparison cell (direct cuOpt vs CVXPY-cuOpt
+  vs CLARABEL weights side by side with per-weight differences), complementing
+  the metrics-only `compare_results`.
+- Renamed the CVXPY-API solve results to `cvxpy_gpu_*` so the direct cuOpt
+  solve no longer shadows them.
+- Notebook re-executed end-to-end on GPU (cuOpt 26.06, fresh S&P 500 snapshot).
+
+## 2026-06-26 — PR #52
+
+Reconcile the project and package version strings.
+
+- Set `pyproject` `[project].version` and `src/__init__.py` `version`
+  (exported as `portfolio_optimization.version`) both to `26.4`, replacing the disagreeing
+  `25.10` / `1.0.0` and aligning with the cuOpt 26.4 release line and the
+  `cuopt-cu13==26.4.*` dependency-pin style.
+- Regenerated `uv.lock`.
+
+## 2026-06-26 — PR #50
+
+Add cuOpt SOCP variance-cap support to the Mean-Variance optimizer.
+
+- Added a direct cuOpt SOCP path for Mean-Variance variance-cap constraints:
+  the variance cap is modeled as a convex quadratic (QCQP) row via
+  `QuadraticExpression` that cuOpt converts to second-order-cone form and solves
+  with the barrier method (`src/mean_variance_optimizer.py`,
+  `src/mean_variance_parameters.py`).
+- Added `_covariance_for_quadratic_terms` to sanitize the covariance for
+  QP/SOCP terms (shape/finiteness checks, symmetrization, and PSD enforcement
+  via a minimum-eigenvalue diagonal floor).
+- Bumped cuOpt/cuML to 26.06 for the `cuda12` extra and added a cuOpt-only
+  `cuda13-socp` extra (`cuopt-cu13==26.6.*`) for CUDA 13 SOCP solves, since
+  `cuml-cu13` 26.06 is not yet published; `cuda13` still tracks 26.04.
+- Switched cvxpy from the pinned git-master build to the released
+  `cvxpy>=1.9.2` and dropped the `[tool.uv.sources]` git pin.
+- Added SOCP unit + GPU tests (`tests/test_core.py`), a SOCP benchmark workflow
+  (`tests/benchmarks/benchmark_workflows.py`, `tests/benchmarks/thresholds.toml`,
+  `tests/test_skill_benchmarks.py`), and the `mean-variance-socp-var-limit`
+  eval case (`skills/cufolio/evals/evals-full.json`, now 10 cases).
+- Updated docs: `skills/cufolio/SKILL.md`,
+  `skills/cufolio/references/workflows/agent_recipes.md`,
+  `skills/cufolio/skill-card.md`, `skills/cufolio/evals/EVAL.md`, and the root
+  `README.md` install instructions for the new extra.
+
 ## 2026-06-05 — PR #47
 
 Add the public Streamlit rebalancing demo.
@@ -15,12 +83,12 @@ Add the public Streamlit rebalancing demo.
 
 ## 2026-06-02 — PR #46
 
-Add the cuFOLIO agent skill for the NVIDIA skills catalog.
+Add the portfolio optimization agent skill for the NVIDIA skills catalog.
 
 - Added agent/plugin manifests, `skills/cufolio/SKILL.md`, skill card,
   benchmark docs, eval definitions, and workflow recipes.
 - Added skill validation workflow/utilities plus benchmark and static skill tests.
-- Hardened cuFOLIO APIs and docs around scenario inputs, portfolio behavior,
+- Hardened portfolio optimization APIs and docs around scenario inputs, portfolio behavior,
   and benchmark workflows.
 
 ## 2026-05-28 — PR #45
@@ -95,7 +163,7 @@ Large bundled change:
   backends; `notebooks/mean_variance_basic.ipynb`.
 - **Added** — `BaseOptimizer` / `BaseParameters` classes and Pydantic
   settings models (`ReturnsComputeSettings`, `ScenarioGenerationSettings`,
-  `KDESettings`, `ApiSettings`) under `cufolio.settings`.
+  `KDESettings`, `ApiSettings`) under `portfolio_optimization.settings`.
 - **Added** — SP100, DOW30, and Global Titans dataset download support in
   `utils.download_data`.
 - **Added** — `compute_absolute_returns` (simple-diff semantics) as a
@@ -247,9 +315,9 @@ README polish (1 file, +2).
 
 ## 2025-11-06 — PR #1
 
-**Initial code drop.** Core `cufolio` package: CVaR optimizer
-(`cufolio.cvar_optimizer.CVaR`), portfolio backtester
-(`cufolio.backtest.portfolio_backtester`), utils, scenario generation
+**Initial code drop.** Core `portfolio_optimization` package: CVaR optimizer
+(`portfolio_optimization.cvar_optimizer.CVaR`), portfolio backtester
+(`portfolio_optimization.backtest.portfolio_backtester`), utils, scenario generation
 (KDE / Gaussian / historical). Example notebooks: `cvar_basic.ipynb`,
 `efficient_frontier.ipynb`, `rebalancing_strategies.ipynb`. `pyproject.toml`
 with `cuda12` / `cuda13` extras pinning `cuml-cu{12,13}` and
