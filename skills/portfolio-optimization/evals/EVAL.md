@@ -3,9 +3,9 @@ SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES.
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Evaluating the cufolio skill
+# Evaluating the portfolio-optimization skill
 
-This directory holds the agent-level evaluation assets for the `cufolio` skill. They sit
+This directory holds the agent-level evaluation assets for the `portfolio-optimization` skill. They sit
 alongside two other testing layers in the repo (see the repo `tests/` directory):
 
 | Layer | Where | What it checks | GPU? | Keys? |
@@ -33,7 +33,7 @@ There are two datasets, same schema:
 
 - `id` — unique identifier
 - `question` — the user prompt fed to the agent
-- `expected_skill` — `"cufolio"` for positive cases, `null` for negatives (skill must stay silent)
+- `expected_skill` — `"portfolio-optimization"` for positive cases, `null` for negatives (skill must stay silent)
 - `expected_script` — `null` (this is an instruction-only skill; it ships no scripts)
 - `ground_truth` — reference answer used by the accuracy judge
 - `expected_behavior` — the ordered steps the agent should take (each graded YES/NO)
@@ -55,10 +55,10 @@ the direct cuOpt SOCP path. A baseline agent (no skill) typically misses these.
 
 ```bash
 # (optional) generate/refresh a draft dataset, then hand-tune it
-nv-base create-eval-dataset skills/cufolio
+nv-base create-eval-dataset skills/portfolio-optimization
 
 # spec + security + eval pass that the catalog publish gate runs
-nv-base validate --external skills/cufolio
+nv-base validate --external skills/portfolio-optimization
 ```
 
 Per the publishing guide, evaluate **with and without** the skill on **both Claude Code and Codex**,
