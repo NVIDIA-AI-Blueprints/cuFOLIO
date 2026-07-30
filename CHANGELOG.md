@@ -5,17 +5,17 @@ newest first, dated by merge to `main`. Backfilled from git history.
 
 ## 2026-07-17 — PR #56
 
-Guard against None CVXPY variable values when the solver hits a resource 
+Guard against None CVXPY variable values when the solver hits a resource
 limit before finding a feasible incumbent.
 
 - Added a check in `_solve_cvxpy_problem` that raises a `RuntimeError`
   immediately after `solve()` if `self.w.value is None`, before any
   downstream `.value` access occurs.
-- Follows from `cvxpy` PR #3443, which downgrades cuOpt's status to 
+- Follows from `cvxpy` PR #3443, which downgrades cuOpt's status to
   `INFEASIBLE_INACCURATE` when a time limit is hit with no incumbent
-  found. Variable `.value`s are now `None` in that case instead of 
+  found. Variable `.value`s are now `None` in that case instead of
   returning an empty primal solution.
-- Once the upstream `cvxpy` crash was fixed, this initially surfaced 
+- Once the upstream `cvxpy` crash was fixed, this initially surfaced
   as a `TypeError` in `_get_cvxpy_risk_metric_value`; this new check
   catches it earlier and provides the `cvxpy` solver status for debugging.
 

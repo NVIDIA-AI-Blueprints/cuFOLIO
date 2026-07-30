@@ -65,7 +65,14 @@ cvar_dir = workspace_root  # For backward compatibility with path references
 try:
     # Import portfolio_optimization package
     import cvxpy as cp
-    from portfolio_optimization import backtest, cvar_optimizer, cvar_utils, rebalance, utils
+
+    from portfolio_optimization import (
+        backtest,
+        cvar_optimizer,
+        cvar_utils,
+        rebalance,
+        utils,
+    )
     from portfolio_optimization.cvar_parameters import CvarParameters
     from portfolio_optimization.settings import (
         KDESettings,
@@ -324,7 +331,12 @@ def _build_portfolio_treemap(
 
 
 def _build_rebalancing_plotly(
-    cum_dates, cum_values, bh_dates, bh_values, rebal_dates=None, title_suffix="",
+    cum_dates,
+    cum_values,
+    bh_dates,
+    bh_values,
+    rebal_dates=None,
+    title_suffix="",
     yaxis_range=None,
 ):
     """Build an interactive Plotly chart for the rebalancing backtest."""
@@ -431,30 +443,41 @@ def _build_rebalancing_plotly(
     return fig
 
 
-def _render_treemap_png(weights_dict, title="", notional=100_000_000,
-                        mask_names=True, cutoff=1e-3):
+def _render_treemap_png(
+    weights_dict, title="", notional=100_000_000, mask_names=True, cutoff=1e-3
+):
     """Render a portfolio treemap as PNG bytes using squarify + matplotlib."""
     import squarify
 
     positions = {k: v for k, v in weights_dict.items() if k != "cash"}
     cash = weights_dict.get("cash", 0.0)
     tickers_sorted = sorted(positions.keys())
-    mask = {t: f"Asset {i+1}" for i, t in enumerate(tickers_sorted)} if mask_names else {t: t for t in tickers_sorted}
+    mask = (
+        {t: f"Asset {i + 1}" for i, t in enumerate(tickers_sorted)}
+        if mask_names
+        else {t: t for t in tickers_sorted}
+    )
 
     labels, sizes, colors = [], [], []
     _green = (0.46, 0.72, 0.0)
     _red = (0.90, 0.13, 0.13)
     _gold = (0.98, 0.77, 0.0)
 
-    long_items = sorted([(t, v) for t, v in positions.items() if v > cutoff], key=lambda x: -x[1])
-    short_items = sorted([(t, v) for t, v in positions.items() if v < -cutoff], key=lambda x: x[1])
+    long_items = sorted(
+        [(t, v) for t, v in positions.items() if v > cutoff], key=lambda x: -x[1]
+    )
+    short_items = sorted(
+        [(t, v) for t, v in positions.items() if v < -cutoff], key=lambda x: x[1]
+    )
 
     for i, (t, v) in enumerate(long_items):
         val = abs(v) * notional
         labels.append(f"{mask[t]}\n${val:,.0f}")
         sizes.append(abs(v))
         f = i / max(1, len(long_items) - 1) if len(long_items) > 1 else 0
-        colors.append((_green[0] * (1 - 0.4 * f), _green[1] * (1 - 0.3 * f), _green[2], 0.9))
+        colors.append(
+            (_green[0] * (1 - 0.4 * f), _green[1] * (1 - 0.3 * f), _green[2], 0.9)
+        )
 
     for i, (t, v) in enumerate(short_items):
         val = abs(v) * notional
@@ -474,7 +497,11 @@ def _render_treemap_png(weights_dict, title="", notional=100_000_000,
         ax.set_facecolor("#000000")
         if sizes:
             squarify.plot(
-                sizes=sizes, label=labels, color=colors, alpha=0.9, ax=ax,
+                sizes=sizes,
+                label=labels,
+                color=colors,
+                alpha=0.9,
+                ax=ax,
                 text_kwargs={"fontsize": 11, "color": "white", "fontweight": "bold"},
                 bar_kwargs={"linewidth": 2, "edgecolor": "#000000"},
             )
@@ -490,7 +517,12 @@ def _render_treemap_png(weights_dict, title="", notional=100_000_000,
 
 
 def _render_rebalancing_frame(
-    cum_dates, cum_values, bh_dates, bh_values, rebal_dates=None, title_suffix="",
+    cum_dates,
+    cum_values,
+    bh_dates,
+    bh_values,
+    rebal_dates=None,
+    title_suffix="",
     yaxis_range=None,
 ):
     """Render a rebalancing chart frame as PNG bytes for smooth animation."""
@@ -1361,7 +1393,6 @@ def create_rebalancing_cpu_worker(
     Sends only serializable data (no matplotlib figures) through mp_queue.
     """
     try:
-        import numpy as _np
         import pandas as _pd
 
         # Lazy imports inside subprocess to avoid CUDA contamination
@@ -1369,9 +1400,18 @@ def create_rebalancing_cpu_worker(
         _workspace_root = _script_dir.parent
         sys.path.insert(0, str(_workspace_root))
 
-        from portfolio_optimization import backtest, cvar_optimizer, cvar_utils, rebalance, utils
+        from portfolio_optimization import (
+            backtest,
+            cvar_optimizer,
+            cvar_utils,
+            rebalance,
+            utils,
+        )
         from portfolio_optimization.cvar_parameters import CvarParameters
-        from portfolio_optimization.settings import ReturnsComputeSettings, ScenarioGenerationSettings
+        from portfolio_optimization.settings import (
+            ReturnsComputeSettings,
+            ScenarioGenerationSettings,
+        )
 
         # Reconstruct Pydantic objects from dicts
         _returns_compute_settings = ReturnsComputeSettings(
@@ -2587,7 +2627,9 @@ def main():
         _ds_max_date = None
         if _ds_path.exists():
             try:
-                _ds_idx = pd.read_csv(_ds_path, index_col=0, parse_dates=True, usecols=[0]).index
+                _ds_idx = pd.read_csv(
+                    _ds_path, index_col=0, parse_dates=True, usecols=[0]
+                ).index
                 _ds_min_date = _ds_idx.min().date()
                 _ds_max_date = _ds_idx.max().date()
             except Exception:
@@ -2596,13 +2638,17 @@ def main():
         col1, col2 = st.columns(2)
         with col1:
             start_date = st.date_input(
-                "Start Date", value=DefaultValues.START_DATE,
-                min_value=_ds_min_date, max_value=_ds_max_date,
+                "Start Date",
+                value=DefaultValues.START_DATE,
+                min_value=_ds_min_date,
+                max_value=_ds_max_date,
             )
         with col2:
             end_date = st.date_input(
-                "End Date", value=DefaultValues.END_DATE,
-                min_value=_ds_min_date, max_value=_ds_max_date,
+                "End Date",
+                value=DefaultValues.END_DATE,
+                min_value=_ds_min_date,
+                max_value=_ds_max_date,
             )
 
         # Portfolio Constraints (user-friendly names with technical help)
@@ -2907,12 +2953,13 @@ def main():
         )
         if gif_path.exists():
             import base64
+
             _gif_bytes = gif_path.read_bytes()
             _gif_b64 = base64.b64encode(_gif_bytes).decode()
             st.markdown(
                 f'<div style="display:flex;justify-content:center;">'
                 f'<img src="data:image/gif;base64,{_gif_b64}" style="width:60%;">'
-                f'</div>',
+                f"</div>",
                 unsafe_allow_html=True,
             )
             st.caption(
@@ -3108,7 +3155,6 @@ def main():
             "when conditions are breached."
         )
 
-
     with tab_bench:
         st.markdown("#### Benchmark Results")
         st.markdown(
@@ -3275,84 +3321,88 @@ def main():
 
     # Display results from session state (persists across selectbox reruns)
     if "last_results" in st.session_state:
-      with tab_demo:
-        results = st.session_state["last_results"]
-        _disp_notional = st.session_state.get("last_notional", 100_000_000)
-        _disp_blog_mode = st.session_state.get("last_blog_mode", True)
+        with tab_demo:
+            results = st.session_state["last_results"]
+            _disp_notional = st.session_state.get("last_notional", 100_000_000)
+            _disp_blog_mode = st.session_state.get("last_blog_mode", True)
 
-        # Summaries
-        st.markdown(
-            '<div class="section-header">📊 Summary</div>', unsafe_allow_html=True
-        )
-        g = results.get("GPU", {})
-        c = results.get("CPU", {})
-
-        col1, col2, col3 = st.columns([1, 1, 1])
-
-        with col1:
-            if g.get("success") and c.get("success"):
-                st.metric("Number of Rebalances", g.get("rebal_count", 0))
-                gt_solve = max(1e-9, g.get("total_solve_time", 0.0))
-                ct_solve = max(1e-9, c.get("total_solve_time", 0.0))
-                solve_speedup = ct_solve / gt_solve
-                st.metric("⚡ Solver Speedup", f"{solve_speedup:.1f}x faster")
-            else:
-                st.error("Speedup calculation failed")
-
-        with col2:
-            if g.get("success"):
-                st.metric("⚡ GPU Solve Time", f"{g.get('total_solve_time', 0.0):.3f}s")
-                st.metric("🔬 GPU KDE Time", f"{g.get('total_kde_time', 0.0):.3f}s")
-            else:
-                st.error("GPU failed")
-
-        with col3:
-            if c.get("success"):
-                st.metric("⚡ CPU Solve Time", f"{c.get('total_solve_time', 0.0):.3f}s")
-                st.metric("🔬 CPU KDE Time", f"{c.get('total_kde_time', 0.0):.3f}s")
-            else:
-                st.error("CPU failed")
-
-        def _render_period_table(label, result_dict):
-            """Render period results table with heatmap portfolio viewer."""
-            if not (
-                result_dict.get("success")
-                and isinstance(result_dict.get("results_df"), pd.DataFrame)
-            ):
-                return
-            st.markdown(f"**{label}**")
-            df = (
-                result_dict["results_df"]
-                .reset_index()
-                .rename(columns={"index": "date"})
+            # Summaries
+            st.markdown(
+                '<div class="section-header">📊 Summary</div>', unsafe_allow_html=True
             )
-            df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
-            st.dataframe(df, hide_index=True)
+            g = results.get("GPU", {})
+            c = results.get("CPU", {})
 
-            snapshots = result_dict.get("portfolio_snapshots", {})
-            if snapshots:
-                with st.expander(f"📂 {label} — Portfolio Heatmap"):
-                    date_keys = list(snapshots.keys())
-                    date_labels = [
-                        str(d).split("T")[0].split(" ")[0] for d in date_keys
-                    ]
-                    selected = st.selectbox(
-                        "Select rebalancing period",
-                        date_labels,
-                        key=f"ptf_date_{label}",
-                    )
-                    idx = date_labels.index(selected)
-                    _png = _render_treemap_png(
-                        snapshots[date_keys[idx]],
-                        title=f"Portfolio — {selected}",
-                        notional=_disp_notional,
-                        mask_names=_disp_blog_mode,
-                    )
-                    st.image(_png, width="stretch")
+            col1, col2, col3 = st.columns([1, 1, 1])
 
-        with st.expander("📋 Detailed Period Results", expanded=False):
-            _render_period_table("GPU Period Results", g)
-            _render_period_table("CPU Period Results", c)
+            with col1:
+                if g.get("success") and c.get("success"):
+                    st.metric("Number of Rebalances", g.get("rebal_count", 0))
+                    gt_solve = max(1e-9, g.get("total_solve_time", 0.0))
+                    ct_solve = max(1e-9, c.get("total_solve_time", 0.0))
+                    solve_speedup = ct_solve / gt_solve
+                    st.metric("⚡ Solver Speedup", f"{solve_speedup:.1f}x faster")
+                else:
+                    st.error("Speedup calculation failed")
+
+            with col2:
+                if g.get("success"):
+                    st.metric(
+                        "⚡ GPU Solve Time", f"{g.get('total_solve_time', 0.0):.3f}s"
+                    )
+                    st.metric("🔬 GPU KDE Time", f"{g.get('total_kde_time', 0.0):.3f}s")
+                else:
+                    st.error("GPU failed")
+
+            with col3:
+                if c.get("success"):
+                    st.metric(
+                        "⚡ CPU Solve Time", f"{c.get('total_solve_time', 0.0):.3f}s"
+                    )
+                    st.metric("🔬 CPU KDE Time", f"{c.get('total_kde_time', 0.0):.3f}s")
+                else:
+                    st.error("CPU failed")
+
+            def _render_period_table(label, result_dict):
+                """Render period results table with heatmap portfolio viewer."""
+                if not (
+                    result_dict.get("success")
+                    and isinstance(result_dict.get("results_df"), pd.DataFrame)
+                ):
+                    return
+                st.markdown(f"**{label}**")
+                df = (
+                    result_dict["results_df"]
+                    .reset_index()
+                    .rename(columns={"index": "date"})
+                )
+                df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
+                st.dataframe(df, hide_index=True)
+
+                snapshots = result_dict.get("portfolio_snapshots", {})
+                if snapshots:
+                    with st.expander(f"📂 {label} — Portfolio Heatmap"):
+                        date_keys = list(snapshots.keys())
+                        date_labels = [
+                            str(d).split("T")[0].split(" ")[0] for d in date_keys
+                        ]
+                        selected = st.selectbox(
+                            "Select rebalancing period",
+                            date_labels,
+                            key=f"ptf_date_{label}",
+                        )
+                        idx = date_labels.index(selected)
+                        _png = _render_treemap_png(
+                            snapshots[date_keys[idx]],
+                            title=f"Portfolio — {selected}",
+                            notional=_disp_notional,
+                            mask_names=_disp_blog_mode,
+                        )
+                        st.image(_png, width="stretch")
+
+            with st.expander("📋 Detailed Period Results", expanded=False):
+                _render_period_table("GPU Period Results", g)
+                _render_period_table("CPU Period Results", c)
 
     # Disclaimer at the bottom
     st.markdown("---")

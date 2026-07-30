@@ -42,6 +42,8 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["E402"]
+"demo/*.py" = ["E402", "F841"]
+"brev/*.ipynb" = ["E402"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true

@@ -147,7 +147,7 @@ result, portfolio = optimizer.solve_optimization_problem(
 ```
 
 
-#### cuOpt Python API 
+#### cuOpt Python API
 
 ```python
 # Use cuOpt for GPU acceleration
@@ -212,4 +212,3 @@ results = rebalancer.rebalance()
 ## References
 
 For detailed API documentation and advanced usage examples, refer to the jupyter notebooks in the [`notebooks/`](../notebooks/) directory.
-

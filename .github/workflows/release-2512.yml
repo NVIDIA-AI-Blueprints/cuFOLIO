@@ -18,7 +18,7 @@ jobs:
       PYTHON_VERSION: 3.12
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26  # v3
 
       - name: Install Git LFS
         run: |
@@ -38,7 +38,7 @@ jobs:
           more /etc/os-release
           uname -a
           nvidia-smi
-          docker version 
+          docker version
 
       - name: Run container and execute notebooks
         run: |
@@ -88,12 +88,12 @@ jobs:
       - name: Verify results
         if: always()
         env:
-          TEST_DOCKER_PULL_KEY: ${{ secrets.TEST_DOCKER_PULL_KEY }}        
+          TEST_DOCKER_PULL_KEY: ${{ secrets.TEST_DOCKER_PULL_KEY }}
         run: |
           echo "Checking for generated files...."
           ls -lh notebooks/*result*
           cd notebooks
-          echo "$TEST_DOCKER_PULL_KEY" |docker login nvcr.io --username  '$oauthtoken' --password-stdin 
+          echo "$TEST_DOCKER_PULL_KEY" |docker login nvcr.io --username  '$oauthtoken' --password-stdin
           docker run --rm \
             -v ./cvar_basic_result.html:/app/input/quantitative_portfolio_optimization/cvar_basic.html  \
             -v ./efficient_frontier_result.html:/app/input/quantitative_portfolio_optimization/efficient_frontier.html  \
@@ -101,11 +101,11 @@ jobs:
             -v "$(pwd):/workspace" \
             nvcr.io/rw983xdqtcdp/auto_test_team/blueprint-github-test-image:latest \
             pytest -m quantitative_portfolio_optimization --disable-warnings --html=/workspace/quantitative_portfolio_optimization.html --self-contained-html
-          
+
 
       - name: Upload notebook results as artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: notebook-results
           path: |
