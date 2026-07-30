@@ -69,7 +69,19 @@ There are many ways to contribute to the portfolio optimization developer exampl
    uv run pre-commit install
    ```
 
-   This will automatically run code formatting and linting checks before each commit.
+   This installs the hooks so they run automatically before every `git commit`. To run them manually against all files at any time:
+
+   ```bash
+   uv run pre-commit run --all-files
+   ```
+
+   Or against only the files you've staged:
+
+   ```bash
+   uv run pre-commit run
+   ```
+
+   The hooks cover formatting (`ruff format`), linting (`ruff check`), shell script checks (`shellcheck`), YAML validation (`yamllint`), GitHub Actions security scanning (`zizmor`), and skill manifest validation. The same suite runs in CI via the `Checks` workflow on every PR.
 
 ### Docker Development (Recommended)
 

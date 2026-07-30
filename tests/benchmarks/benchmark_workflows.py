@@ -169,7 +169,9 @@ def _full_invested_params() -> CvarParameters:
     )
 
 
-def _variance_cap_from_equal_weight(returns_dict: dict, multiplier: float = 1.05) -> float:
+def _variance_cap_from_equal_weight(
+    returns_dict: dict, multiplier: float = 1.05
+) -> float:
     covariance = np.asarray(returns_dict["covariance"], dtype=float)
     weights = np.ones(len(returns_dict["tickers"])) / len(returns_dict["tickers"])
     return float(weights @ covariance @ weights) * multiplier
@@ -409,13 +411,9 @@ def check_build_optimal(m: dict, th: dict) -> list[str]:
 def check_socp_variance_limit(m: dict, th: dict) -> list[str]:
     fails = []
     if abs(m["weight_sum"] - 1.0) > th["weight_sum_tol"]:
-        fails.append(
-            "weights+cash sum to {:.6f}, not about 1".format(m["weight_sum"])
-        )
+        fails.append("weights+cash sum to {:.6f}, not about 1".format(m["weight_sum"]))
     if m["cash_weight"] > th["cash_weight_max"]:
-        fails.append(
-            "cash is {:.6f}, expected fully invested".format(m["cash_weight"])
-        )
+        fails.append("cash is {:.6f}, expected fully invested".format(m["cash_weight"]))
     if m["variance"] > m["variance_limit"] + th["variance_limit_tol"]:
         fails.append(
             "variance {:.8f} exceeded cap {:.8f}".format(
@@ -427,9 +425,7 @@ def check_socp_variance_limit(m: dict, th: dict) -> list[str]:
     if th["solver_contains"] not in m["solver"].lower():
         fails.append("solver was {!r}, not cuOpt".format(m["solver"]))
     if th["problem_type_contains"] not in m["problem_type"].lower():
-        fails.append(
-            "problem type was {!r}, not SOCP/QCQP".format(m["problem_type"])
-        )
+        fails.append("problem type was {!r}, not SOCP/QCQP".format(m["problem_type"]))
     if m["solve_seconds"] > th["solve_seconds_max"]:
         fails.append("solve took {:.2f}s".format(m["solve_seconds"]))
     return fails

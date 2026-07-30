@@ -26,7 +26,7 @@ jobs:
               }
             }' -f user=$USER -F number=$PROJECT_NUMBER > project_data.json
           echo 'PROJECT_ID='$(jq '.data.user.projectV2.id' project_data.json) >> $GITHUB_ENV
-                    
+
       - name: Add issue to project
         env:
           # Replace with your secret here too
@@ -41,5 +41,5 @@ jobs:
                 }
               }
             }' -f project=$PROJECT_ID -f issue=$ISSUE_ID --jq '.data.addProjectV2ItemById.item.id')"
-           
+
            echo 'ITEM_ID='$item_id >> $GITHUB_ENV

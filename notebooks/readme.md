@@ -60,4 +60,3 @@ This notebook combines `cvar_basic.ipynb`, `efficient_frontier.ipynb`, and `reba
 For questions or issues, please visit:
 - [GitHub Issues](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/issues)
 - [GitHub Discussions](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/discussions)
-

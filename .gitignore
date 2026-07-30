@@ -54,4 +54,4 @@ data/stock_data/*.csv
 nv-base-output-*.html
 /BENCHMARK.md
 eval-results/
-
+nvskills-ci/

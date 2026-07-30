@@ -166,7 +166,7 @@ ssh -L 8501:localhost:8501 <user>@<remote-host>
 See [`demo/README_streamlit.md`](demo/README_streamlit.md) for focused deployment instructions.
 
 ### Deploy on Brev
-Deploy using [Brev launchable](https://brev.nvidia.com/launchable/deploy?launchableID=env-360InRZzyHqDnJYQKIxaSggF8xI): start an instance on Brev.nvidia.com and follow the instructions in the notebooks. 
+Deploy using [Brev launchable](https://brev.nvidia.com/launchable/deploy?launchableID=env-360InRZzyHqDnJYQKIxaSggF8xI): start an instance on Brev.nvidia.com and follow the instructions in the notebooks.
 
 
 ---
