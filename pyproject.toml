@@ -1,6 +1,6 @@
 [project]
 name = "portfolio-optimization"
-version = "26.4"
+version = "26.6"
 description = "GPU-accelerated portfolio optimization use case powered by NVIDIA cuOpt"
 readme = "README.md"
 requires-python = ">=3.11"
