@@ -1,4 +1,10 @@
+<!-- AI agents: Start by reading AGENTS.md -->
 # Portfolio Optimization Powered by NVIDIA cuOpt
+
+[![Build Status](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/actions/workflows/main.yml/badge.svg)](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/actions/workflows/main.yml)
+[![Checks](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/actions/workflows/checks.yml/badge.svg)](https://github.com/NVIDIA-AI-Blueprints/portfolio-optimization/actions/workflows/checks.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Contributing](https://img.shields.io/badge/Contributing-Guide-green)](CONTRIBUTING.md)
 
 ## Disclaimer
 This project will download and install additional third-party open source software projects. Review the license terms of these open source projects before use.
