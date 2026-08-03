@@ -2,7 +2,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Sync skills/plugin version from repo root VERSION file.
+# Sync package, skills, and plugin versions from the repo root VERSION file.
+# VERSION is the single source of truth; every other version string is derived.
 # Run from repo root: ./ci/utils/sync_skills_version.sh
 set -e
 
@@ -21,7 +22,17 @@ if [[ -z "${RELEASE_VERSION}" ]]; then
   exit 1
 fi
 
-echo "Syncing skills version to ${RELEASE_VERSION} (from VERSION)..."
+echo "Syncing version to ${RELEASE_VERSION} (from VERSION)..."
+
+# pyproject.toml [project] version and src/__init__.py module version.
+# Both are the only top-of-line `version = "..."` assignments in their files
+# (`target-version = ...` etc. are not anchored at column 0).
+for f in pyproject.toml src/__init__.py; do
+  if [[ -f "$f" ]]; then
+    sed -i "s/^version = \"[^\"]*\"/version = \"${RELEASE_VERSION}\"/" "$f"
+    echo "  updated $f"
+  fi
+done
 
 # .cursor-plugin/plugin.json and gemini-extension.json: top-level "version"
 for f in .cursor-plugin/plugin.json gemini-extension.json; do

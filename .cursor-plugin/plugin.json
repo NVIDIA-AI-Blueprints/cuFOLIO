@@ -1,7 +1,7 @@
 {
   "name": "nvidia-portfolio-optimization-skills",
   "description": "Agent skill for NVIDIA-accelerated Mean-CVaR portfolio optimization with cuOpt. Use when building or analyzing portfolios.",
-  "version": "25.10.00",
+  "version": "26.6",
   "author": {
     "name": "NVIDIA"
   },

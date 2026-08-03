@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 name: Add new issue/PR to project
 # This action automatically takes all issues and PRs created in the repo and
 # adds them to a specific GitHub project

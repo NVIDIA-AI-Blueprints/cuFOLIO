@@ -47,20 +47,21 @@ repos:
     rev: v1.24.1
     hooks:
       - id: zizmor
-        args: ["--no-online-audits", "--min-severity", "high"]
+        args: ["--no-online-audits", "--min-severity", "medium"]
 
   - repo: local
     hooks:
+      # Keep this trigger list a superset of sync-skills-version's: validate is
+      # the gate, sync is the fixer, so anything that can desync must run both.
       - id: validate-skills
         name: Validate agent skills
         entry: ci/utils/validate_skills.sh
         language: system
         pass_filenames: false
-        files: ^(skills/|\.claude-plugin/|\.cursor-plugin/|gemini-extension\.json|AGENTS\.md|ci/utils/validate_skills\.sh|ci/utils/sync_skills_version\.sh)$
-      # sync-skills-version: enable once a VERSION file is added to the repo
-      # - id: sync-skills-version
-      #   name: Sync skills version from VERSION
-      #   entry: ci/utils/sync_skills_version.sh
-      #   language: system
-      #   pass_filenames: false
-      #   files: ^(VERSION|\.claude-plugin/marketplace\.json|\.cursor-plugin/plugin\.json|gemini-extension\.json|skills/.*/SKILL\.md)$
+        files: ^(VERSION|pyproject\.toml|src/__init__\.py|skills/.*|\.claude-plugin/.*|\.cursor-plugin/.*|gemini-extension\.json|AGENTS\.md|ci/utils/(validate_skills|sync_skills_version)\.sh)$
+      - id: sync-skills-version
+        name: Sync version from VERSION
+        entry: ci/utils/sync_skills_version.sh
+        language: system
+        pass_filenames: false
+        files: ^(VERSION|pyproject\.toml|src/__init__\.py|\.claude-plugin/marketplace\.json|\.cursor-plugin/plugin\.json|gemini-extension\.json|skills/.*/SKILL\.md)$
