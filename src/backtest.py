@@ -48,6 +48,7 @@ class portfolio_backtester:
         risk_free_rate=0.0,
         test_method="historical",
         benchmark_portfolios=None,
+        seed=None,
     ):
         """
         Initialize portfolio backtester with test portfolio and return data.
@@ -66,6 +67,11 @@ class portfolio_backtester:
             or "gaussian_simulation"
         benchmark_portfolios : list, pd.DataFrame, or None, default None
             Benchmark portfolios for comparison. If None, uses equal-weight portfolio
+        seed : int, optional
+            Seed for simulated return scenarios, used when test_method is
+            "kde_simulation" or "gaussian_simulation". None (default) draws
+            fresh entropy, so repeated backtests differ. Set an integer for
+            reproducible results. Ignored for "historical".
         """
 
         self.test_portfolio = test_portfolio
@@ -83,6 +89,12 @@ class portfolio_backtester:
         self._return_mean = returns_dict["mean"]
         self._covariance = returns_dict["covariance"]
         self._returns = returns_dict["returns"]
+
+        # default_rng(None) draws fresh entropy, matching the previous
+        # global-RNG behaviour when no seed is given. Must be set before
+        # _get_return_scenarios(), which consumes it.
+        self.seed = seed
+        self._rng = np.random.default_rng(seed)
 
         self._R = self._get_return_scenarios()
 
@@ -205,7 +217,7 @@ class portfolio_backtester:
         """
         generation_method = str(generation_method).lower()
         if generation_method == "gaussian":  # fit Gaussian
-            R = np.random.multivariate_normal(
+            R = self._rng.multivariate_normal(
                 self._return_mean, self._covariance, size=num_scen
             )
 
@@ -239,7 +251,7 @@ class portfolio_backtester:
             Generated return samples with shape (num_scen, n_assets)
         """
         kde = KernelDensity(kernel=kernel, bandwidth=bandwidth).fit(returns_data)
-        new_samples = kde.sample(num_scen)
+        new_samples = kde.sample(num_scen, random_state=self.seed)
 
         return new_samples
 

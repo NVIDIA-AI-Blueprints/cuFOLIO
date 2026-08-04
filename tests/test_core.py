@@ -25,6 +25,7 @@ from portfolio_optimization.mean_variance_parameters import MeanVarianceParamete
 from portfolio_optimization.portfolio import Portfolio
 from portfolio_optimization.settings import (
     ApiSettings,
+    KDESettings,
     ReturnsComputeSettings,
     ScenarioGenerationSettings,
 )
@@ -324,6 +325,51 @@ class TestGenerateCvarData:
         cd = rd["cvar_data"]
         assert cd.R.shape == (3, 100)
         np.testing.assert_allclose(cd.p.sum(), 1.0, atol=1e-12)
+
+    def _gaussian_R(self, returns_dict, seed):
+        rd = generate_cvar_data(
+            returns_dict,
+            ScenarioGenerationSettings(num_scen=100, fit_type="gaussian", seed=seed),
+        )
+        return rd["cvar_data"].R
+
+    def test_seed_makes_gaussian_scenarios_reproducible(self, returns_dict):
+        first = self._gaussian_R(returns_dict, seed=1234)
+        second = self._gaussian_R(returns_dict, seed=1234)
+        np.testing.assert_array_equal(first, second)
+
+    def test_different_seeds_give_different_gaussian_scenarios(self, returns_dict):
+        assert not np.array_equal(
+            self._gaussian_R(returns_dict, seed=1234),
+            self._gaussian_R(returns_dict, seed=5678),
+        )
+
+    def test_unseeded_gaussian_scenarios_are_not_reproducible(self, returns_dict):
+        """seed=None must keep drawing fresh entropy (the pre-existing default)."""
+        assert not np.array_equal(
+            self._gaussian_R(returns_dict, seed=None),
+            self._gaussian_R(returns_dict, seed=None),
+        )
+
+    def test_seed_is_independent_of_global_numpy_state(self, returns_dict):
+        """A seeded run must not be perturbed by the global RNG."""
+        np.random.seed(1)
+        first = self._gaussian_R(returns_dict, seed=99)
+        np.random.seed(2)
+        np.random.random(50)  # advance the global stream
+        second = self._gaussian_R(returns_dict, seed=99)
+        np.testing.assert_array_equal(first, second)
+
+    def test_seed_makes_kde_scenarios_reproducible(self, returns_dict):
+        settings = ScenarioGenerationSettings(
+            num_scen=50,
+            fit_type="kde",
+            kde_settings=KDESettings(bandwidth=0.01, device="CPU"),
+            seed=2024,
+        )
+        first = generate_cvar_data(returns_dict, settings)["cvar_data"].R
+        second = generate_cvar_data(returns_dict, settings)["cvar_data"].R
+        np.testing.assert_array_equal(first, second)
 
     @pytest.mark.skip(
         reason="no_fit path in generate_cvar_data passes a DataFrame to CvarData.R, "
