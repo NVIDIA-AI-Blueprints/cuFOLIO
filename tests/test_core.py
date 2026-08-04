@@ -371,10 +371,6 @@ class TestGenerateCvarData:
         second = generate_cvar_data(returns_dict, settings)["cvar_data"].R
         np.testing.assert_array_equal(first, second)
 
-    @pytest.mark.skip(
-        reason="no_fit path in generate_cvar_data passes a DataFrame to CvarData.R, "
-        "which pydantic-validates as ndarray. Pre-existing bug in src/cvar_utils.py."
-    )
     def test_no_fit(self, returns_dict):
         rd = generate_cvar_data(
             returns_dict,
@@ -383,6 +379,34 @@ class TestGenerateCvarData:
         cd = rd["cvar_data"]
         n_obs = returns_dict["returns"].shape[0]
         assert cd.R.shape == (3, n_obs)
+
+    def test_no_fit_returns_ndarray(self, returns_dict):
+        """R must be an ndarray, not the DataFrame np.transpose would yield."""
+        rd = generate_cvar_data(
+            returns_dict,
+            ScenarioGenerationSettings(fit_type="no_fit"),
+        )
+        assert isinstance(rd["cvar_data"].R, np.ndarray)
+
+    def test_no_fit_uses_historical_returns_verbatim(self, returns_dict):
+        """no_fit must pass the input through untouched, transposed."""
+        expected = np.asarray(returns_dict["returns"]).T
+        rd = generate_cvar_data(
+            returns_dict,
+            ScenarioGenerationSettings(fit_type="no_fit"),
+        )
+        np.testing.assert_allclose(rd["cvar_data"].R, expected, atol=1e-12)
+
+    def test_no_fit_probabilities_are_uniform(self, returns_dict):
+        rd = generate_cvar_data(
+            returns_dict,
+            ScenarioGenerationSettings(fit_type="no_fit"),
+        )
+        cd = rd["cvar_data"]
+        n_obs = returns_dict["returns"].shape[0]
+        # num_scen is derived from the data, not from the configured value
+        assert cd.p.shape == (n_obs,)
+        np.testing.assert_allclose(cd.p, 1.0 / n_obs, atol=1e-12)
 
     def test_invalid_fit_type(self):
         with pytest.raises(ValidationError):

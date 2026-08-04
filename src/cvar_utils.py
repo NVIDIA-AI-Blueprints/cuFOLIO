@@ -174,7 +174,11 @@ def generate_cvar_data(
         p = np.ones(num_scen) / num_scen  # probability of each scenario
 
     elif fit_type == "no_fit":  # use input data directly
-        R = np.transpose(returns_data)
+        # np.asarray first: returns_data is a DataFrame, and np.transpose on a
+        # DataFrame returns a DataFrame, which CvarData.R (typed np.ndarray)
+        # rejects at validation. The gaussian and kde paths already transpose
+        # ndarrays, so this was the only path that produced a DataFrame.
+        R = np.transpose(np.asarray(returns_data))
         num_scen = R.shape[1]
         p = np.ones(num_scen) / num_scen
 
