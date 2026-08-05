@@ -3,7 +3,7 @@
 
 """GPU-accelerated portfolio optimization powered by NVIDIA cuOpt."""
 
-version = "26.4"
+version = "26.6"
 
 from .base_parameters import BaseParameters
 from .cvar_data import CvarData

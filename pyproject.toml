@@ -3,12 +3,15 @@ name = "portfolio-optimization"
 version = "26.6"
 description = "GPU-accelerated portfolio optimization use case powered by NVIDIA cuOpt"
 readme = "README.md"
-requires-python = ">=3.11"
+# Upper bound tracks the highest Python the dependency stack ships wheels for.
+# On 3.14, uv falls back to building pandas from sdist and the Meson build fails.
+requires-python = ">=3.11,<3.14"
 dependencies = [
     "numpy>=2.0.0",
     "pandas>=2.0",
     "cvxpy>=1.9.2",
     "scikit-learn>=1.5",
+    "matplotlib>=3.8",
     "seaborn>=0.13",
     "yfinance>=0.2.0",
     "pydantic>=2.12.5",

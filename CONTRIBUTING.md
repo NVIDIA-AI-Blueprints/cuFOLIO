@@ -8,6 +8,7 @@ Thank you for your interest in contributing to the portfolio optimization develo
 - [Ways to Contribute](#ways-to-contribute)
 - [Development Setup](#development-setup)
 - [Coding Standards](#coding-standards)
+- [Versioning](#versioning)
 - [Testing](#testing)
 - [Submitting Changes](#submitting-changes)
 - [Issue Reporting](#issue-reporting)
@@ -121,6 +122,29 @@ We use `ruff` for linting. Run it with:
 ```bash
 uv run ruff check src/
 ```
+
+### Versioning
+
+The root [`VERSION`](VERSION) file is the single source of truth for every version
+string in the repository. Never edit a version by hand anywhere else. To bump the
+release version, edit `VERSION` and then run:
+
+```bash
+./ci/utils/sync_skills_version.sh
+```
+
+That propagates the value to:
+
+- `pyproject.toml` (`[project] version`)
+- `src/__init__.py` (the exported `version` attribute)
+- `skills/*/SKILL.md` frontmatter
+- `.claude-plugin/marketplace.json`, `.cursor-plugin/plugin.json`, `gemini-extension.json`
+
+`./ci/utils/validate_skills.sh` fails the build if any of these drift from `VERSION`,
+and both scripts run as pre-commit hooks, so a mismatch is caught before it lands.
+
+**Note:** editing `skills/*/SKILL.md` invalidates its NVSkills signature
+(`skill.oms.sig`). A maintainer must re-run `/nvskills-ci` on the PR to reattach it.
 
 ### Documentation
 
