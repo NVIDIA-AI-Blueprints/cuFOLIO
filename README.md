@@ -13,14 +13,14 @@ This project will download and install additional third-party open source softwa
 
 ## Overview
 
-This portfolio optimization developer example addresses the financial industry's trade-off between **computational speed** and **model complexity**. By leveraging **NVIDIA accelerated computing** with **[NVIDIA cuOpt](https://github.com/NVIDIA/cuopt)**, this solution transforms robust analysis (e.g., Mean-CVaR, large-scale simulations) from slow batch processing into a **fast, iterative workflow** for dynamic decision-making.
+This portfolio optimization developer example addresses the financial industry's trade-off between **computational speed** and **model complexity**. By leveraging **NVIDIA accelerated computing** — **[NVIDIA cuOpt](https://github.com/NVIDIA/cuopt)** for GPU-accelerated portfolio solves, and **[RAPIDS cuML](https://github.com/rapidsai/cuml)** for GPU scenario generation — this solution transforms robust analysis (e.g., Mean-CVaR, large-scale simulations) from slow batch processing into a **fast, iterative workflow** for dynamic decision-making.
 
 ### Accelerated Architecture
 
 The end-to-end pipeline connects market data ingestion to optimal strategy backtesting using the NVIDIA CUDA ecosystem:
 
 #### 1. Data Science & Scenario Generation
-* **Technology:** **CUDA-X Data Science** (cuDF, cuML)
+* **Technology:** **CUDA-X Data Science** — **[RAPIDS cuML](https://github.com/rapidsai/cuml)** for GPU KDE scenario generation
 * **Function:** Accelerates data preprocessing and the learning/sampling of return distributions.
 * **Performance:** Achieves speedups of up to **100x** when generating scenarios.
 
