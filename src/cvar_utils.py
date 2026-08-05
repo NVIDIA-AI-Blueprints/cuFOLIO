@@ -31,6 +31,7 @@ def generate_samples_kde(
     returns_data: np.ndarray,
     kde_settings: KDESettings = None,
     verbose: bool = False,
+    seed: int = None,
 ):
     """Fit KernelDensity to data and return new samples.
 
@@ -45,6 +46,10 @@ def generate_samples_kde(
         Uses defaults if not provided.
     verbose : bool, optional
         Whether to print timing information.
+    seed : int, optional
+        Seed for the sampler. None (default) draws fresh entropy, so repeated
+        calls return different samples. Both the scikit-learn and cuML
+        KernelDensity samplers accept this as ``random_state``.
 
     Returns
     -------
@@ -77,7 +82,7 @@ def generate_samples_kde(
         kde = sklearn.neighbors.KernelDensity(kernel=kernel, bandwidth=bandwidth).fit(
             returns_data
         )
-        new_samples = kde.sample(num_scen)
+        new_samples = kde.sample(num_scen, random_state=seed)
 
         end_time = time.time()
         kde_time = end_time - start_time
@@ -94,7 +99,7 @@ def generate_samples_kde(
             kde = cuml.neighbors.KernelDensity(kernel=kernel, bandwidth=bandwidth).fit(
                 returns_data
             )
-            new_samples = kde.sample(num_scen)
+            new_samples = kde.sample(num_scen, random_state=seed)
 
         end_time = time.time()
         kde_time = end_time - start_time
@@ -146,10 +151,14 @@ def generate_cvar_data(
     fit_type = scenario_generation_settings.fit_type
     verbose = scenario_generation_settings.verbose
     kde_settings = scenario_generation_settings.kde_settings
+    seed = scenario_generation_settings.seed
 
     if fit_type == "gaussian":  # Gaussian distribution
         covariance = returns_dict["covariance"]
-        R_log = np.random.multivariate_normal(return_mean, covariance, size=num_scen)
+        # default_rng(None) draws fresh entropy, matching the previous
+        # global-RNG behaviour when no seed is configured.
+        rng = np.random.default_rng(seed)
+        R_log = rng.multivariate_normal(return_mean, covariance, size=num_scen)
         R = np.transpose(R_log)
         p = np.ones(num_scen) / num_scen  # probability of each scenario
 
@@ -159,6 +168,7 @@ def generate_cvar_data(
             returns_data,
             kde_settings=kde_settings,
             verbose=verbose,
+            seed=seed,
         )
         R = np.transpose(R_log)
         p = np.ones(num_scen) / num_scen  # probability of each scenario

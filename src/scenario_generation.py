@@ -30,6 +30,10 @@ class ForwardPathSimulator:
         Number of scenarios/forward paths to generate.
     method : str, default "log_gbm"
         Generation method (currently only "log_gbm" supported).
+    seed : int, optional
+        Seed for the path-generation RNG. None (default) draws fresh entropy,
+        so repeated runs give different paths. Set an integer for reproducible
+        simulations.
 
     Attributes
     ----------
@@ -47,13 +51,19 @@ class ForwardPathSimulator:
         Generated synthetic paths (n_paths x n_steps+1 x n_assets).
     """
 
-    def __init__(self, fitting_data, generation_dates, n_paths, method="log_gbm"):
+    def __init__(
+        self, fitting_data, generation_dates, n_paths, method="log_gbm", seed=None
+    ):
         """Initialize scenario generator with data and parameters."""
         self.fitting_data = fitting_data
         self.dates = generation_dates
         self.n_steps = len(generation_dates) - 1
         self.n_paths = n_paths
         self.generation_method = method.lower()
+        # default_rng(None) draws fresh entropy, matching the previous
+        # global-RNG behaviour when no seed is given.
+        self.seed = seed
+        self._rng = np.random.default_rng(seed)
 
     def generate(self, plot_paths=False, n_plots=0):
         """Generate synthetic forward paths.
@@ -135,7 +145,7 @@ class ForwardPathSimulator:
 
         current_rates = last_rates
         simulated_paths[:, 0, :] = current_rates
-        Z = np.random.normal(size=(self.n_paths, self.n_steps, len(mu)))
+        Z = self._rng.normal(size=(self.n_paths, self.n_steps, len(mu)))
         dW = np.matmul(Z, L) * np.sqrt(dt)
 
         for t in range(1, self.n_steps + 1):
@@ -164,7 +174,7 @@ class ForwardPathSimulator:
         _ = self.simulated_paths.shape[2]  # n_ccy_pairs (unused)
 
         # Randomly select indices for the scenarios to plot
-        random_indices = np.random.choice(n_paths, n_plots, replace=False)
+        random_indices = self._rng.choice(n_paths, n_plots, replace=False)
         plt.rcParams.update({"font.size": 8})
         sns.set(rc={"figure.dpi": 100, "savefig.dpi": 300})
         sns.set_palette(palette="tab10")

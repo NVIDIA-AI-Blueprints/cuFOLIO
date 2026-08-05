@@ -83,6 +83,11 @@ class ScenarioGenerationSettings(BaseModel):
         If None and fit_type='kde', default KDESettings are used.
     verbose : bool
         Whether to print progress information. Default is False.
+    seed : int, optional
+        Seed for the scenario-generation random number generator. Default is
+        None, which draws fresh entropy on every call, so repeated runs give
+        different scenarios. Set an integer to make scenario generation --
+        and therefore optimization results and backtests -- reproducible.
 
     Examples
     --------
@@ -94,6 +99,9 @@ class ScenarioGenerationSettings(BaseModel):
     ... )
     >>> print(settings.num_scen)
     10000
+
+    >>> # Reproducible scenarios: identical R for identical seed
+    >>> reproducible = ScenarioGenerationSettings(num_scen=1000, seed=42)
 
     >>> # Using model_dump() to get dictionary representation
     >>> settings_dict = settings.model_dump()
@@ -111,6 +119,10 @@ class ScenarioGenerationSettings(BaseModel):
         default=None, description="KDE-specific settings"
     )
     verbose: bool = Field(default=False, description="Print progress information")
+    seed: Optional[int] = Field(
+        default=None,
+        description="RNG seed for reproducible scenarios; None draws fresh entropy",
+    )
 
     @model_validator(mode="after")
     def set_default_kde_settings(self) -> "ScenarioGenerationSettings":
