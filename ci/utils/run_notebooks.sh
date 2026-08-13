@@ -23,13 +23,18 @@ cd "$REPO_ROOT"
 
 # "<input stem>:<output stem>". The output stems are load-bearing: the
 # artifact upload and the QA verification step in main.yml reference these
-# exact filenames, and launchable deliberately maps to launchable_brev_result.
+# exact filenames.
+#
+# launchable.ipynb is deliberately excluded: its setup cell runs
+# `uv sync --extra <cuda>` on its own, which -- since default-groups is empty
+# -- uninstalls ipykernel/papermill from the very venv driving the kernel and
+# kills the run. That cell is meant for a fresh Brev/launchable environment,
+# not a CI venv that already has the notebook toolchain installed.
 NOTEBOOKS=(
   "mean_variance_basic:mean_variance_basic_result"
   "cvar_basic:cvar_basic_result"
   "efficient_frontier:efficient_frontier_result"
   "rebalancing_strategies:rebalancing_strategies_result"
-  "launchable:launchable_brev_result"
 )
 
 echo "===================== Python and GPU Info ====================="
