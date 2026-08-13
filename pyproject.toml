@@ -108,10 +108,16 @@ dev = [
     "pytest>=9.0",
     "pre-commit==4.3.0",
 ]
-# Registering the Jupyter kernel is part of the documented end-user workflow,
-# not a dev-only task, so ipykernel is its own group rather than living in
-# `dev`. Previously it sat in `dev` and only worked because uv installs that
-# group by default; with default-groups disabled it must be requested.
+# Toolchain for registering the Jupyter kernel and executing the example
+# notebooks in CI (ci/utils/run_notebooks.sh). Registering the kernel is part
+# of the documented end-user workflow, not a dev-only task, so this is its own
+# group rather than living in `dev`. Previously ipykernel sat in `dev` and only
+# worked because uv installs that group by default; with default-groups
+# disabled it must be requested. Keeping papermill/nbconvert here too means
+# their versions resolve into uv.lock rather than being pulled unpinned from
+# PyPI on every CI run.
 notebooks = [
     "ipykernel>=7.1.0",
+    "nbconvert>=7.16",
+    "papermill>=2.6",
 ]
