@@ -53,7 +53,7 @@ echo "===================== Install Dependencies (extra: ${CUDA_EXTRA}) ========
 # `notebooks` dependency group so its versions are pinned by uv.lock. Every
 # tool below is invoked through `uv run`, which resolves from the project
 # environment -- a bare `papermill` would not be on PATH.
-uv sync --extra "${CUDA_EXTRA}" --group dev --group notebooks
+uv sync --extra "${CUDA_EXTRA}" --extra mcp --group dev --group notebooks
 
 echo "===================== Toolchain versions ====================="
 uv run papermill --version

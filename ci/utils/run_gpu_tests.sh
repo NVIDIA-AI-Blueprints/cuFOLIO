@@ -38,7 +38,7 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 echo "===================== Install Dependencies (extra: ${CUDA_EXTRA}) ====================="
-uv sync --extra "${CUDA_EXTRA}" --group dev
+uv sync --extra "${CUDA_EXTRA}" --extra mcp --group dev
 
 echo "===================== Solver versions ====================="
 uv run python -c "

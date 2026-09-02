@@ -31,6 +31,13 @@ cuda13 = [
 cuda13-socp = [
     "cuopt-cu13==26.6.*",
 ]
+mcp = [
+    "mcp>=2,<3",
+    "anyio>=4.5,<5",
+]
+
+[project.scripts]
+portfolio-optimization-mcp = "portfolio_optimization.mcp_server.server:main"
 
 [tool.ruff]
 line-length = 88
@@ -55,7 +62,7 @@ markers = [
 ]
 
 [tool.setuptools]
-packages = ["portfolio_optimization"]
+packages = ["portfolio_optimization", "portfolio_optimization.mcp_server"]
 py-modules = []
 
 [tool.setuptools.package-dir]

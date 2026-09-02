@@ -34,7 +34,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --extra mcp --group dev
 
       - name: Run tests
         run: uv run pytest tests/ -v

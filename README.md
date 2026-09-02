@@ -151,6 +151,25 @@ Explore the example notebooks in the [`notebooks/`](notebooks/) directory:
 - **`efficient_frontier.ipynb`**: A quick tutorial on how to generate efficient frontier.
 - **`rebalancing_strategies.ipynb`** Introduction to dynamic re-balancing and examples of testing strategies
 
+### Local MCP server
+
+Install the optional `mcp` extra to expose the existing cuOpt Mean-CVaR and
+Mean-Variance workflows to a local MCP client:
+
+```bash
+uv sync --extra cuda13 --extra mcp
+uv run python -c "from portfolio_optimization.utils import download_data; download_data('data/stock_data', datasets=['sp500'])"
+uv run portfolio-optimization-mcp --data data/stock_data/sp500.csv
+```
+
+The initial integration is stdio-only and loads one trusted CSV or Parquet
+dataset at startup. Its five tools cover dataset discovery, optimization,
+portfolio analysis, outcome simulation, and backtesting. See
+[the local MCP guide](docs/mcp.md) for client configuration, schemas, examples,
+and scope, or run the
+MCP section in [`cvar_basic.ipynb`](notebooks/cvar_basic.ipynb), which reuses
+the notebook's downloaded S&P 500 data.
+
 ### Streamlit GTC Demo
 
 The Streamlit demo from the GTC branch is available under [`demo/`](demo/) as a dynamic rebalancing app.
